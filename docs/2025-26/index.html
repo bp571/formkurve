@@ -354,6 +354,29 @@
             color:var(--muted); font-size:13.5px; }
   footer p { margin:0; max-width:100ch; }
 
+  /* ---- Team detail panels ------------------------------------------------ */
+  .tdet { max-width:1080px; margin:28px auto 0; padding:28px 0 0; border-top:2.5px solid var(--ink); }
+  .tdet h2 { margin-top:0; }
+  .tdet[hidden] { display:none; }
+  .thead { display:flex; gap:24px; margin:0 0 20px; }
+  .tchest { display:flex; gap:14px; flex:0 0 auto; }
+  .tname { display:block; font:700 20px var(--display); color:var(--ink); margin-bottom:4px; }
+  .tstats { display:flex; flex-direction:column; gap:3px; font-size:14px; }
+  .tstats span { display:flex; gap:8px; }
+  .tstats b { font-weight:700; }
+  .tstats .trank { color:var(--muted); }
+  .tres { width:100%; border-collapse:collapse; font-size:14px; }
+  .tres th, .tres td { padding:8px 6px; text-align:left; border-bottom:1px solid var(--line); }
+  .tres thead th { font:600 12.5px var(--display); color:var(--ink); border-bottom:2px solid var(--ink); }
+  .tres tbody tr:last-child td { border-bottom:0; }
+  .tres .md { width:40px; color:var(--muted); font:600 var(--display); }
+  .tres .dt { width:80px; color:var(--muted); }
+  .tres .opp, .tres .vs { font-weight:600; }
+  .tres .vs { color:var(--muted); font-size:12px; margin-left:3px; }
+  .tres .sc { width:60px; font-weight:600; }
+  .tres .pr, .tres .pw { color:var(--muted); width:80px; }
+  .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
+
   /* Two columns as soon as the table fits next to the chart without scrolling. */
   @media (min-width:1400px) {
     /* Nine columns of table need the room more than five matchdays of chart. */
@@ -586,6 +609,7 @@
       </section>
     </div>
   </div>
+
 <div class="fdash solo"><section class="fcast">
     <h2>Was besser sein müsste – und es nicht ist</h2>
     <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
@@ -627,9 +651,12 @@
 <script>
   const rows = [...document.querySelectorAll('tbody tr[data-rank]')];
   const tokens = [...document.querySelectorAll('.ptok')];
+  const panels = [...document.querySelectorAll('section.tdet')];
   const selected = new Set(['0', '1', '2']);
+  let detail = '0';
 
   function apply() {
+    // Form chart highlighting and selection
     rows.forEach(tr => {
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
@@ -638,10 +665,26 @@
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     });
     tokens.forEach(g => g.classList.toggle('sel', selected.has(g.dataset.rank)));
+
+    // Team panel highlighting: show the detail panel for current team
+    panels.forEach(p => {
+      const rank = p.dataset.rank;
+      p.hidden = rank !== detail;
+      // Also highlight the season chart line in this panel
+      if (rank === detail) {
+        const seasonLine = p.querySelector('#season' + detail);
+        if (seasonLine) {
+          p.querySelectorAll('.line').forEach(l => l.classList.remove('sel'));
+          seasonLine.classList.add('sel');
+          if (seasonLine.parentNode) seasonLine.parentNode.appendChild(seasonLine);
+        }
+      }
+    });
   }
 
   function toggle(rank) {
     selected.has(rank) ? selected.delete(rank) : selected.add(rank);
+    detail = rank;  // Always set detail panel to clicked team
     apply();
   }
 

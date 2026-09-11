@@ -23,8 +23,11 @@ from config import (
     STAFFEL_NAME,
     team_slug,
 )
+from backtest import outcome_of, probabilities
 from explore_predictors import SKIP_MATCHDAYS, compare
-from predict import forecast, load, next_matchday, track_record
+from predict import (
+    MIN_MATCHES, calibration, forecast, load, next_matchday, track_record, walk_forward,
+)
 from rating import EloRating
 from score import clamp, normalize_to_power_score
 
@@ -615,6 +618,190 @@ def crest_img(logos, team):
     return f'<img class="lg sm" src="{crest}" alt="">' if crest else ""
 
 
+def match_probabilities(rows, season):
+    """Per-match probabilities (p_away, p_draw, p_home) keyed by row index.
+    Only for current season and only if enough matches have been played.
+    Returns {match_idx: (p_away, p_draw, p_home), ...} or {} if not applicable."""
+    if season != SEASON_CURRENT or len(rows) < MIN_MATCHES:
+        return {}
+
+    params = calibration()
+    result = {}
+    for match_idx, (r, diff) in enumerate(walk_forward(rows)):
+        result[match_idx] = probabilities(diff, params)
+    return result
+
+
+def team_stats_by_venue(rows, team):
+    """Record (W-D-L) for a team, split by home and away."""
+    home = {"w": 0, "d": 0, "l": 0}
+    away = {"w": 0, "d": 0, "l": 0}
+    for r in rows:
+        hg, ag = int(r["home_goals"]), int(r["away_goals"])
+        if r["home_team"] == team:
+            v = home
+            is_home = True
+        elif r["away_team"] == team:
+            v = away
+            is_home = False
+        else:
+            continue
+        if hg > ag:
+            v["w" if is_home else "l"] += 1
+        elif hg < ag:
+            v["l" if is_home else "w"] += 1
+        else:
+            v["d"] += 1
+    return home, away
+
+
+def team_details_html(table, rows, logos, season, matchdays, match_probs):
+    """HTML sections for team detail panels, one per team, all hidden except rank 0.
+
+    Each panel shows: head (crest, form rank, form, power, position, W-D-L split),
+    season chart (highlighted), results list with probabilities, remaining fixtures."""
+
+    sections = []
+    for rank, team_row in enumerate(table):
+        team = team_row["team"]
+        w, d, l = team_row["record"]
+        w_h, d_h, l_h = team_row["record"]  # Will be replaced with venue splits
+        w_a, d_a, l_a = team_row["record"]
+
+        # Venue split
+        home_stats, away_stats = team_stats_by_venue(rows, team)
+        w_h, d_h, l_h = home_stats["w"], home_stats["d"], home_stats["l"]
+        w_a, d_a, l_a = away_stats["w"], away_stats["d"], away_stats["l"]
+
+        # Team head info
+        crest = logos.get(team_slug(team))
+        crest_html = f'<img class="lg" src="{crest}" alt="">' if crest else ""
+        position_gap = team_row["position"] - (rank + 1)
+        if position_gap > 0:
+            gap_cls = "up"
+            gap_txt = f"+{position_gap}"
+        elif position_gap < 0:
+            gap_cls = "down"
+            gap_txt = f"−{abs(position_gap)}"
+        else:
+            gap_cls = "flat"
+            gap_txt = "±0"
+
+        head = f"""    <div class="thead">
+      <div class="tchest">{crest_html}
+        <div>
+          <span class="tname">{html.escape(team)}</span>
+          <div class="tstats">
+            <span class="form"><b>{num(team_row["form"])}</b> <span class="trank">Rang {rank + 1}</span></span>
+            <span class="tpower">Saison <b>{num(team_row["power"])}</b></span>
+            <span class="tpos">Tabelle <b>{team_row["position"]}</b> <span class="{gap_cls}">({gap_txt})</span></span>
+            <span class="trecord"><b>{w_h}-{d_h}-{l_h}</b> zu Hause, <b>{w_a}-{d_a}-{l_a}</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>"""
+
+        # Results list (current season only)
+        results_html = ""
+        if season == SEASON_CURRENT and match_probs:
+            results = []
+            for r in sorted(rows, key=lambda x: (x["date"], int(x["matchday"]))):
+                if r["home_team"] != team and r["away_team"] != team:
+                    continue
+                is_home = r["home_team"] == team
+                opponent = r["away_team"] if is_home else r["home_team"]
+                hg, ag = int(r["home_goals"]), int(r["away_goals"])
+                score = f"{hg}:{ag}"
+                outcome = outcome_of(hg, ag)
+
+                # Find match in walk_forward results to get probability
+                prob_txt = "–"
+                for idx, (wf_r, _) in enumerate(walk_forward(rows)):
+                    if (wf_r["date"] == r["date"] and
+                        wf_r["home_team"] == r["home_team"] and
+                        wf_r["away_team"] == r["away_team"]):
+                        if idx in match_probs:
+                            p = match_probs[idx]
+                            outcome_prob = p[outcome]
+                            if outcome_prob < 0.25:
+                                prob_txt = f'Sieg {pct(p[2] if is_home else p[0])}'
+                                surprise_badge = '<span class="badge">Überraschung</span>'
+                            else:
+                                prob_txt = pct(outcome_prob)
+                                surprise_badge = ""
+                        break
+                else:
+                    surprise_badge = ""
+
+                opp_side = "H" if is_home else "A"
+                results.append(
+                    f'<tr><td class="md">{r["matchday"]}</td>'
+                    f'<td class="dt">{short_date(r["date"])}</td>'
+                    f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span></td>'
+                    f'<td class="sc">{score}</td>'
+                    f'<td class="pr">{prob_txt}{surprise_badge}</td></tr>'
+                )
+
+            results_html = f"""    <h3>Bisherige Ergebnisse</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+        </thead>
+        <tbody>
+          {"".join(results)}
+        </tbody>
+      </table>
+    </div>
+"""
+
+        # Remaining fixtures
+        remaining_html = ""
+        if team_row.get("remaining"):
+            remaining = team_row["remaining"]["fixtures"]
+            if remaining:
+                fixtures = []
+                for date_iso, md, opp, is_home in remaining:
+                    opp_side = "H" if is_home else "A"
+                    opp_power = None
+                    for t in table:
+                        if t["team"] == opp:
+                            opp_power = t["power"]
+                            break
+                    power_txt = num(opp_power) if opp_power else "–"
+                    fixtures.append(
+                        f'<tr><td class="md">{md}</td>'
+                        f'<td class="dt">{short_date(date_iso)}</td>'
+                        f'<td class="opp">{html.escape(opp)} <span class="vs">{opp_side}</span></td>'
+                        f'<td class="pw">{power_txt}</td></tr>'
+                    )
+
+                remaining_html = f"""    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          {"".join(fixtures)}
+        </tbody>
+      </table>
+    </div>
+"""
+
+        # Build the team detail section
+        section = f"""  <section class="tdet" data-rank="{rank}" hidden>
+    <h2>Team im Detail</h2>
+{head}
+    <div class="card chart">{svg_chart(table, matchdays, "series", "season")}</div>
+{results_html}{remaining_html}
+  </section>
+"""
+        sections.append(section)
+
+    return "\n".join(sections)
+
+
 def forecast_section(season, played, logos, forms, scheduled=None):
     """The next matchday as probabilities. Empty string if nothing is scheduled,
     which is what a finished season looks like."""
@@ -795,6 +982,14 @@ def render(season, rows):
 
     logos = load_logos()
     pitch_svg, pitch_lo, pitch_hi = svg_pitch(table, logos)
+
+    # Team detail panels: only render for current season
+    # and generate HTML for each team's detail section
+    if season == SEASON_CURRENT:
+        match_probs = match_probabilities(rows, season)
+        team_panels_html = team_details_html(table, rows, logos, season, matchdays, match_probs)
+    else:
+        team_panels_html = ""
 
     # Forecast and the measurement of what it is worth belong side by side - the
     # page is not allowed to publish one without the other, and set as two
@@ -1227,6 +1422,29 @@ def render(season, rows):
             color:var(--muted); font-size:13.5px; }}
   footer p {{ margin:0; max-width:100ch; }}
 
+  /* ---- Team detail panels ------------------------------------------------ */
+  .tdet {{ max-width:1080px; margin:28px auto 0; padding:28px 0 0; border-top:2.5px solid var(--ink); }}
+  .tdet h2 {{ margin-top:0; }}
+  .tdet[hidden] {{ display:none; }}
+  .thead {{ display:flex; gap:24px; margin:0 0 20px; }}
+  .tchest {{ display:flex; gap:14px; flex:0 0 auto; }}
+  .tname {{ display:block; font:700 20px var(--display); color:var(--ink); margin-bottom:4px; }}
+  .tstats {{ display:flex; flex-direction:column; gap:3px; font-size:14px; }}
+  .tstats span {{ display:flex; gap:8px; }}
+  .tstats b {{ font-weight:700; }}
+  .tstats .trank {{ color:var(--muted); }}
+  .tres {{ width:100%; border-collapse:collapse; font-size:14px; }}
+  .tres th, .tres td {{ padding:8px 6px; text-align:left; border-bottom:1px solid var(--line); }}
+  .tres thead th {{ font:600 12.5px var(--display); color:var(--ink); border-bottom:2px solid var(--ink); }}
+  .tres tbody tr:last-child td {{ border-bottom:0; }}
+  .tres .md {{ width:40px; color:var(--muted); font:600 var(--display); }}
+  .tres .dt {{ width:80px; color:var(--muted); }}
+  .tres .opp, .tres .vs {{ font-weight:600; }}
+  .tres .vs {{ color:var(--muted); font-size:12px; margin-left:3px; }}
+  .tres .sc {{ width:60px; font-weight:600; }}
+  .tres .pr, .tres .pw {{ color:var(--muted); width:80px; }}
+  .tdet .badge {{ position:relative; left:auto; right:auto; transform:none; }}
+
   /* Two columns as soon as the table fits next to the chart without scrolling. */
   @media (min-width:1400px) {{
     /* Nine columns of table need the room more than five matchdays of chart. */
@@ -1384,6 +1602,7 @@ def render(season, rows):
       </section>
     </div>
   </div>
+{team_panels_html}
 {outlook}
   <footer>
     <p>Datenquelle: <a href="{SOURCE_URL}">fussball.de</a> (DFB) – dort stehen die offizielle
@@ -1394,9 +1613,12 @@ def render(season, rows):
 <script>
   const rows = [...document.querySelectorAll('tbody tr[data-rank]')];
   const tokens = [...document.querySelectorAll('.ptok')];
+  const panels = [...document.querySelectorAll('section.tdet')];
   const selected = new Set(['0', '1', '2']);
+  let detail = '0';
 
   function apply() {{
+    // Form chart highlighting and selection
     rows.forEach(tr => {{
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
@@ -1405,10 +1627,26 @@ def render(season, rows):
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     }});
     tokens.forEach(g => g.classList.toggle('sel', selected.has(g.dataset.rank)));
+
+    // Team panel highlighting: show the detail panel for current team
+    panels.forEach(p => {{
+      const rank = p.dataset.rank;
+      p.hidden = rank !== detail;
+      // Also highlight the season chart line in this panel
+      if (rank === detail) {{
+        const seasonLine = p.querySelector('#season' + detail);
+        if (seasonLine) {{
+          p.querySelectorAll('.line').forEach(l => l.classList.remove('sel'));
+          seasonLine.classList.add('sel');
+          if (seasonLine.parentNode) seasonLine.parentNode.appendChild(seasonLine);
+        }}
+      }}
+    }});
   }}
 
   function toggle(rank) {{
     selected.has(rank) ? selected.delete(rank) : selected.add(rank);
+    detail = rank;  // Always set detail panel to clicked team
     apply();
   }}
 
