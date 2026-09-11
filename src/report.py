@@ -306,12 +306,48 @@ def official_positions(stats):
     return {team: i + 1 for i, team in enumerate(order)}
 
 
-def build_table(rows):
+def remaining(scheduled, powers):
+    """Per team: fixtures still to play, oldest first, and the mean season power
+    of the opponents.
+
+    Returns {team: {"fixtures": [(date, matchday, opponent, is_home), ...],
+                    "n_home": int, "n_away": int, "difficulty": float | None}}
+
+    difficulty is the mean season power of remaining opponents, unadjusted for venue.
+    It is None if the team has nothing left to play."""
+    teams = {r[side] for r in scheduled for side in ("home_team", "away_team")}
+    result = {team: {"fixtures": [], "n_home": 0, "n_away": 0, "difficulty": None}
+              for team in teams}
+
+    for r in sorted(scheduled, key=lambda r: (r["date"], int(r["matchday"]))):
+        md = int(r["matchday"])
+        hg, ag = r["home_team"], r["away_team"]
+        is_h = {hg: True, ag: False}
+
+        for team, opponent in ((hg, ag), (ag, hg)):
+            result[team]["fixtures"].append((r["date"], md, opponent, is_h[team]))
+            if is_h[team]:
+                result[team]["n_home"] += 1
+            else:
+                result[team]["n_away"] += 1
+
+    for team in result:
+        if result[team]["fixtures"]:
+            opp_powers = [powers.get(f[2], 50) for f in result[team]["fixtures"]]
+            result[team]["difficulty"] = sum(opp_powers) / len(opp_powers)
+
+    return result
+
+
+def build_table(rows, scheduled=()):
     """Ranked by current form, with the season power score alongside it.
 
     Form leads because it is the one question the official table cannot answer -
     a reader already knows who has collected the points. Power stays in the row
     so the two readings sit side by side instead of competing for the headline.
+
+    If scheduled rows are provided, includes difficulty (mean strength of remaining
+    opponents) and remaining fixture data for each team.
     """
     ratings, played, matchdays, series = replay(rows)
     forms = form_series(rows, matchdays)
@@ -319,26 +355,32 @@ def build_table(rows):
     positions = official_positions(stats)
     dots = last5_form(rows)
 
+    # Prepare power scores for remaining calculation
+    powers = {team: normalize_to_power_score(ratings[team], played[team])
+              for team in ratings}
+    remaining_data = remaining(scheduled, powers) if scheduled else {}
+
     table = []
     for team, values in series.items():
         f = forms[team]
         s = stats[team]
-        table.append(
-            {
-                "team": team,
-                "form": f[-1],
-                "delta": None if len(f) < 2 else f[-1] - f[-2],
-                "power": values[-1],
-                "matches": played[team],
-                "record": (s["w"], s["d"], s["l"]),
-                "dots": dots[team],
-                "gf": s["gf"],
-                "ga": s["ga"],
-                "position": positions[team],
-                "series": values,
-                "fseries": f,
-            }
-        )
+        row = {
+            "team": team,
+            "form": f[-1],
+            "delta": None if len(f) < 2 else f[-1] - f[-2],
+            "power": values[-1],
+            "matches": played[team],
+            "record": (s["w"], s["d"], s["l"]),
+            "dots": dots[team],
+            "gf": s["gf"],
+            "ga": s["ga"],
+            "position": positions[team],
+            "series": values,
+            "fseries": f,
+        }
+        if scheduled and team in remaining_data:
+            row["remaining"] = remaining_data[team]
+        table.append(row)
     table.sort(key=lambda t: t["form"], reverse=True)
     return table, matchdays
 
@@ -553,6 +595,21 @@ def season_switcher(current_season):
     return f'<nav class="seasons">{"".join(links)}</nav>'
 
 
+def rest_cell(remaining_data):
+    """HTML for the remaining schedule difficulty cell.
+
+    Shows mean opponent strength and home/away split.
+    Returns empty string if no remaining data or no fixtures left."""
+    if not remaining_data or remaining_data.get("difficulty") is None:
+        return '<td class="s-hide season">&ndash;</td>'
+
+    difficulty = remaining_data["difficulty"]
+    n_h = remaining_data["n_home"]
+    n_a = remaining_data["n_away"]
+    return (f'<td class="s-hide season"><div class="pw"><b>{num(difficulty)}</b></div>'
+            f'<span class="rs">{n_h} H / {n_a} A</span></td>')
+
+
 def crest_img(logos, team):
     crest = logos.get(team_slug(team))
     return f'<img class="lg sm" src="{crest}" alt="">' if crest else ""
@@ -695,14 +752,14 @@ def predictor_section():
 
 
 def render(season, rows):
-    table, matchdays = build_table(rows)
+    scheduled = load(season, "scheduled")
+    has_future = bool(scheduled)
+
+    table, matchdays = build_table(rows, scheduled)
     matchday = matchdays[-1]
     last_date = max(r["date"] for r in rows)
     last_date = ".".join(reversed(last_date.split("-")))
     generated = date.today().strftime("%d.%m.%Y")
-
-    scheduled = load(season, "scheduled")
-    has_future = bool(scheduled)
 
     top_team, bottom_team = table[0], table[-1]
     # The team the table is most wrong about right now - the whole reason the
@@ -787,6 +844,7 @@ def render(season, rows):
         # Only the team of the hour gets the highlighter on top of its note; the
         # form jump is the smaller finding and stays a written remark, so the
         # two markers are told apart by how loudly they are marked.
+        rest_html = rest_cell(t.get("remaining")) if has_future else ""
         body_rows.append(
             f'<tr data-rank="{rank}" tabindex="0" '
             f'class="{"marked" if rank == hot_rank else ""}" '
@@ -802,9 +860,16 @@ def render(season, rows):
             f"<td class=\"s-hide\">{t['matches']}</td>"
             f"<td class=\"s-hide\">{t['gf']}:{t['ga']}</td>"
             f"<td class=\"s-hide\">{signed(t['gf'] - t['ga'])}</td>"
+            f"{rest_html}"
             f"<td class=\"tab\">{t['position']}{gap}</td>"
             f"</tr>"
         )
+
+    # Only render Rest column header when there are scheduled fixtures
+    rest_header = '<th class="s-hide">Rest</th>' if has_future else ""
+    rest_legend = ('<strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, ohne '
+                   'Heimvorteil verrechnet; die Aufteilung dahinter sagt, wie viele davon zu Hause sind. '
+                   if has_future else "")
 
     return f"""<!DOCTYPE html>
 <html lang="de">
@@ -977,6 +1042,7 @@ def render(season, rows):
   .seg i.d {{ background:var(--draw); }}
   .seg i.l {{ background:var(--down); }}
   .rt {{ color:var(--muted); font-size:13px; }}
+  .rs {{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }}
 
   tbody tr[data-rank] {{ cursor:pointer; }}
   tbody tr[data-rank]:hover {{ background:#f2efe7; }}
@@ -1282,7 +1348,7 @@ def render(season, rows):
                 <th>#</th><th class="l">Team</th><th class="l">Form</th>
                 <th>+/&minus;</th><th class="l season">Saison</th>
                 <th class="s-hide">Sp</th><th class="s-hide">Tore</th>
-                <th class="s-hide">Diff</th><th>Tabelle</th>
+                <th class="s-hide">Diff</th>{rest_header}<th>Tabelle</th>
               </tr>
             </thead>
             <tbody>
@@ -1305,7 +1371,7 @@ def render(season, rows):
         mit Gegnerstärke und Torverhältnis: 50 ist Ligadurchschnitt, darüber heißt besser als der
         Schnitt. <strong>Saison</strong> daneben ist der Wert über alle bisherigen Spiele – wer
         dort hoch steht und in der Form tief, hat eine gute Saison, aber gerade eine schwache
-        Phase. <strong>Tabelle</strong> ist der offizielle Platz; der Wert dahinter ist die
+        Phase. {rest_legend}<strong>Tabelle</strong> ist der offizielle Platz; der Wert dahinter ist die
         Differenz zum Platz in dieser Formtabelle. <span class="chip up">+2</span> heißt: hier
         zwei Plätze besser als in der Tabelle, das Team spielt gerade also über seinem
         Saisonstand. <strong>+/&minus;</strong> ist die Veränderung der Form gegenüber dem
