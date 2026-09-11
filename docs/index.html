@@ -91,6 +91,10 @@
             text-align:right; }
   .where b { color:var(--ink); font-weight:600;
               font-variant-numeric:tabular-nums; }
+  .seasons { display:flex; gap:14px; flex-wrap:wrap; padding:10px 0;
+             font-size:14.5px; }
+  .seasons span { color:var(--ink); font-weight:600; }
+  .seasons a { color:inherit; }
 
   /* The claim the official table cannot make, stated as a sentence. It is the
      reason the page exists, so it opens the page. The two league extremes sit
@@ -373,6 +377,7 @@
     .s-hide { display:none; }
     .mhead { align-items:flex-start; }
     .where { text-align:left; }
+    .seasons { gap:10px; font-size:13px; }
     .lede { padding:19px 0 18px; }
     .facts { gap:6px 26px; padding:13px 0 24px; }
     th, td { padding:9px 5px; }
@@ -422,6 +427,7 @@
       <p class="where">Kreisliga A Hunsrück-Mosel<br>Saison 2026/27<br>
       Nach <b>Spieltag 5</b>, 06.09.2026</p>
     </div>
+    <nav class="seasons"><span>2026/27</span><a href="2025-26/">2025/26</a></nav>
     <div class="lede">
       <div class="claim">
         <p class="pre">Die Tabelle sagt Platz 9.</p>
@@ -647,7 +653,7 @@
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
-    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 10.09.2026</p>
+    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 11.09.2026</p>
   </footer>
 </main>
 <script>

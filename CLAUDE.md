@@ -20,9 +20,10 @@ each matchday. Everything below is implemented; [Not implemented](#not-implement
 
 ```
 python run.py                     # current season (2026/27): scrape -> rate -> write the page
-python run.py --season 2025/26    # a past season
+python run.py --season 2025/26    # a past season: writes to docs/2025-26/index.html
 python run.py --cached            # parse saved pages in data/raw, no network
-python src/report.py              # rebuild the page from data/matches.csv alone, no network
+python src/report.py              # rebuild docs/index.html from data/matches.csv alone, no network
+python src/report.py --season 2025/26  # rebuild docs/2025-26/index.html
 python src/backtest.py            # re-run the walk-forward evaluation
 python src/predict.py             # next matchday's probabilities in the terminal
 python src/explore_predictors.py  # the predictor comparison the page publishes
@@ -193,6 +194,11 @@ table position with its distance to the form rank), a full-width pitch laying th
 form, one inline-SVG progression chart for the form window — clicking a row highlights that team in
 table, pitch and chart at once — then the next matchday's forecast and the predictor table behind
 it, side by side in the same grid, and a source link.
+
+Archive pages (`docs/<season>/index.html` for finished seasons) carry the dashboard only — pitch,
+form table, and chart. The forecast and simulation are absent because nothing is scheduled left to
+forecast; the page opens directly on the facts. A season switcher in the masthead links between all
+pages, both current and archive.
 
 **Every explanation sits with the thing it explains.** The page carries no essay at the end: the
 legend for the form table, the notes under the forecast and the note under the predictor table are

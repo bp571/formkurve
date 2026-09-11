@@ -19,6 +19,7 @@ from config import (
     R0,
     SEASON_CURRENT,
     SEASON_PREVIOUS,
+    STAFFEL_IDS,
     STAFFEL_NAME,
     team_slug,
 )
@@ -32,6 +33,38 @@ from score import clamp, normalize_to_power_score
 OUT_HTML = os.path.join(os.path.dirname(__file__), "..", "docs", "index.html")
 
 SOURCE_URL = "https://www.fussball.de"
+
+
+def season_path(season):
+    """Output path for a season page. Current season goes to docs/index.html,
+    archived seasons go to docs/<season-slug>/index.html."""
+    if season == SEASON_CURRENT:
+        return OUT_HTML
+    season_slug = season.replace("/", "-")
+    return os.path.join(os.path.dirname(__file__), "..", "docs", season_slug, "index.html")
+
+
+def season_href(from_season, to_season):
+    """Relative link from one season page to another.
+
+    From docs/index.html (current season):
+      - to archive 2025-26: "2025-26/"
+    From docs/2025-26/index.html (archive):
+      - to current: "../"
+      - to sibling 2024-25: "../2024-25/"
+    """
+    if from_season == to_season:
+        return None  # same page, no link needed
+    if from_season == SEASON_CURRENT:
+        # Links from docs/index.html
+        to_slug = to_season.replace("/", "-")
+        return f"{to_slug}/"
+    else:
+        # Links from docs/<season>/index.html
+        if to_season == SEASON_CURRENT:
+            return "../"
+        to_slug = to_season.replace("/", "-")
+        return f"../{to_slug}/"
 
 # The y-axis follows the data, but snapped to a 5-point grid and never narrower
 # than Y_MIN_SPAN. Without that floor an early season - where the whole league
@@ -505,15 +538,32 @@ def svg_chart(table, matchdays, key="series", prefix="line"):
     return "\n".join(parts)
 
 
+def season_switcher(current_season):
+    """HTML for the season switcher in the masthead. Lists all seasons in STAFFEL_IDS,
+    newest first, with relative links between archive pages."""
+    seasons = sorted(STAFFEL_IDS.keys(), reverse=True)
+    links = []
+    for season in seasons:
+        href = season_href(current_season, season)
+        if href is None:
+            # Current page
+            links.append(f'<span>{season}</span>')
+        else:
+            links.append(f'<a href="{href}">{season}</a>')
+    return f'<nav class="seasons">{"".join(links)}</nav>'
+
+
 def crest_img(logos, team):
     crest = logos.get(team_slug(team))
     return f'<img class="lg sm" src="{crest}" alt="">' if crest else ""
 
 
-def forecast_section(season, played, logos, forms):
+def forecast_section(season, played, logos, forms, scheduled=None):
     """The next matchday as probabilities. Empty string if nothing is scheduled,
     which is what a finished season looks like."""
-    matchday, fixtures = next_matchday(load(season, "scheduled"))
+    if scheduled is None:
+        scheduled = load(season, "scheduled")
+    matchday, fixtures = next_matchday(scheduled)
     tips = forecast(played, fixtures)
     if not tips:
         return ""
@@ -651,6 +701,9 @@ def render(season, rows):
     last_date = ".".join(reversed(last_date.split("-")))
     generated = date.today().strftime("%d.%m.%Y")
 
+    scheduled = load(season, "scheduled")
+    has_future = bool(scheduled)
+
     top_team, bottom_team = table[0], table[-1]
     # The team the table is most wrong about right now - the whole reason the
     # page exists, so it opens the page as a sentence rather than sitting in a
@@ -691,7 +744,7 @@ def render(season, rows):
     # columns of the same row that pairing is shown rather than only asserted.
     # A finished season has no fixtures left, and then the comparison stands on
     # its own at the page's normal measure.
-    fcast = forecast_section(season, rows, logos, {t["team"]: t["form"] for t in table})
+    fcast = forecast_section(season, rows, logos, {t["team"]: t["form"] for t in table}, scheduled)
     predictors = predictor_section()
     if fcast:
         outlook = (f'<div class="dash fdash"><div class="col">{fcast}</div>'
@@ -846,6 +899,10 @@ def render(season, rows):
             text-align:right; }}
   .where b {{ color:var(--ink); font-weight:600;
               font-variant-numeric:tabular-nums; }}
+  .seasons {{ display:flex; gap:14px; flex-wrap:wrap; padding:10px 0;
+             font-size:14.5px; }}
+  .seasons span {{ color:var(--ink); font-weight:600; }}
+  .seasons a {{ color:inherit; }}
 
   /* The claim the official table cannot make, stated as a sentence. It is the
      reason the page exists, so it opens the page. The two league extremes sit
@@ -1128,6 +1185,7 @@ def render(season, rows):
     .s-hide {{ display:none; }}
     .mhead {{ align-items:flex-start; }}
     .where {{ text-align:left; }}
+    .seasons {{ gap:10px; font-size:13px; }}
     .lede {{ padding:19px 0 18px; }}
     .facts {{ gap:6px 26px; padding:13px 0 24px; }}
     th, td {{ padding:9px 5px; }}
@@ -1177,6 +1235,7 @@ def render(season, rows):
       <p class="where">{html.escape(STAFFEL_NAME)}<br>Saison {season}<br>
       Nach <b>Spieltag {matchday}</b>, {last_date}</p>
     </div>
+    {season_switcher(season)}
     <div class="lede">
       <div class="claim">
         <p class="pre">{lede_pre}</p>
@@ -1330,7 +1389,9 @@ def check_css(html):
         raise ValueError("unclosed CSS comment")
 
 
-def write_report(season, rows, path=OUT_HTML):
+def write_report(season, rows, path=None):
+    if path is None:
+        path = season_path(season)
     html_out = render(season, rows)
     check_css(html_out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
