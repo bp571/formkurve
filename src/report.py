@@ -26,7 +26,7 @@ from config import (
 from backtest import outcome_of, probabilities
 from explore_predictors import SKIP_MATCHDAYS, compare
 from predict import (
-    MIN_MATCHES, calibration, forecast, load, next_matchday, track_record, walk_forward,
+    MIN_MATCHES, calibration, forecast, load, next_matchday, simulate_season, track_record, walk_forward,
 )
 from rating import EloRating
 from score import clamp, normalize_to_power_score
@@ -898,6 +898,68 @@ def forecast_section(season, played, logos, forms, scheduled=None):
 """
 
 
+def simulation_section(season, rows, logos, scheduled):
+    """Season outcome probabilities from Monte Carlo simulation.
+    Empty string if nothing is scheduled or not enough matches played."""
+    if season != SEASON_CURRENT or not scheduled:
+        return ""
+
+    sim = simulate_season(rows, scheduled)
+    if not sim:
+        return ""
+
+    # Sort by expected final points, descending
+    sorted_teams = sorted(sim.items(),
+                         key=lambda x: x[1]["exp_pts"],
+                         reverse=True)
+
+    body = []
+    for team, data in sorted_teams:
+        pts = int(round(data["pts"]))
+        exp_pts = int(round(data["exp_pts"]))
+        p_first = data["p_first"]
+        p_bottom2 = data["p_bottom2"]
+
+        # Bars
+        first_bar = f'<i class="up" style="width:{p_first:.1%}"></i>' if p_first > 0.005 else ""
+        bottom_bar = f'<i class="down" style="width:{p_bottom2:.1%}"></i>' if p_bottom2 > 0.005 else ""
+
+        first_pct = f"{round(p_first * 100)}%" if p_first >= 0.005 else "&lt;1%"
+        bottom_pct = f"{round(p_bottom2 * 100)}%" if p_bottom2 >= 0.005 else "&lt;1%"
+
+        crest = logos.get(team_slug(team))
+        crest_html = f'<img class="lg sm" src="{crest}" alt="">' if crest else ""
+
+        body.append(
+            f'<tr><td class="l">{crest_html}<span>{html.escape(team)}</span></td>'
+            f'<td>{pts}</td><td>{exp_pts}</td>'
+            f'<td><div class="bar">{first_bar}</div>{first_pct}</td>'
+            f'<td><div class="bar">{bottom_bar}</div>{bottom_pct}</td></tr>'
+        )
+
+    return f"""<section class="sim">
+    <h2>Saisonausblick</h2>
+    <p class="sub">Wahrscheinlichkeit, die Meisterschaft zu gewinnen oder abzusteigen.</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th class="l">Team</th><th>Punkte</th><th>Erwartet</th><th>Meister %</th><th>Abstieg %</th></tr>
+        </thead>
+        <tbody>
+          {chr(10).join("          " + r for r in body).strip()}
+        </tbody>
+      </table>
+    </div>
+    <p class="hint"><strong>Wie das gerechnet wird.</strong> Die verbleibenden {len(scheduled)} Spiele werden {4000} mal
+    mit den gleichen erwarteten Toren gespielt wie in der Prognose daneben, die Tabellen gezählt.
+    <strong>Was das nicht ist:</strong> Die Stärken sind die aktuelle Schätzung und werden selbst nicht variiert,
+    so dass die Streuung wenn überhaupt zu eng ist; früh in der Saison ist die aktuelle Schätzung
+    meist der Ligadurchschnitt, die Prozente wiederholen also die Tabelle und die verbleibenden Spiele;
+    ein Team unter &lt;1&nbsp;% ist nicht bei null.</p>
+  </section>
+"""
+
+
 def predictor_section():
     """The measured table of things that ought to predict better. None does, and
     showing that is the honest way to publish a forecast at all."""
@@ -998,11 +1060,14 @@ def render(season, rows):
     # its own at the page's normal measure.
     fcast = forecast_section(season, rows, logos, {t["team"]: t["form"] for t in table}, scheduled)
     predictors = predictor_section()
+    sim_section = simulation_section(season, rows, logos, scheduled)
     if fcast:
         outlook = (f'<div class="dash fdash"><div class="col">{fcast}</div>'
                    f'<div class="col">{predictors}</div></div>')
     else:
         outlook = f'<div class="fdash solo">{predictors}</div>'
+    if sim_section:
+        outlook += sim_section
 
     body_rows = []
     for rank, t in enumerate(table):
@@ -1444,6 +1509,18 @@ def render(season, rows):
   .tres .sc {{ width:60px; font-weight:600; }}
   .tres .pr, .tres .pw {{ color:var(--muted); width:80px; }}
   .tdet .badge {{ position:relative; left:auto; right:auto; transform:none; }}
+
+  /* ---- Season simulation -------------------------------------------------- */
+  .sim {{ max-width:1080px; margin:34px auto 0; }}
+  .sim table {{ width:100%; }}
+  .sim th {{ text-align:center; }}
+  .sim th.l {{ text-align:left; }}
+  .sim td.l {{ display:flex; align-items:center; gap:8px; }}
+  .sim td.l span {{ font-weight:600; }}
+  .sim td {{ padding:8px; text-align:right; }}
+  .sim .bar {{ display:flex; height:5px; max-width:180px; margin:5px 0 2px;
+              overflow:hidden; background:var(--track); }}
+  .sim .bar i {{ flex-grow:1; }}
 
   /* Two columns as soon as the table fits next to the chart without scrolling. */
   @media (min-width:1400px) {{

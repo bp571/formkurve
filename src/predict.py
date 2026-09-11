@@ -20,6 +20,8 @@ pair beside the percentages restages the same contradiction one model deeper.
 """
 
 import csv
+import math
+import random
 from collections import defaultdict
 from functools import lru_cache
 
@@ -163,6 +165,101 @@ def track_record(rows):
         return None
     n = len(model_rps)
     return {"n": n, "hits": hits, "rps": sum(model_rps) / n, "base_rps": sum(base_rps) / n}
+
+
+SIM_RUNS = 4000
+SIM_SEED = 1
+
+
+def simulate_season(played, scheduled, runs=SIM_RUNS, seed=SIM_SEED):
+    """Monte Carlo over remaining fixtures. Returns {team: {"pts": current,
+    "exp_pts": mean final, "p_first": float, "p_bottom2": float}} or None if
+    nothing is scheduled or not enough matches played."""
+    if not scheduled or len(played) < MIN_MATCHES:
+        return None
+
+    # Current state: points, goal difference, goals scored per team
+    teams = {r[side] for r in played for side in ("home_team", "away_team")}
+    current_state = {team: {"pts": 0, "gd": 0, "gf": 0} for team in teams}
+    for r in played:
+        hg, ag = int(r["home_goals"]), int(r["away_goals"])
+        h, a = r["home_team"], r["away_team"]
+        current_state[h]["gf"] += hg
+        current_state[a]["gf"] += ag
+        current_state[h]["gd"] += hg - ag
+        current_state[a]["gd"] += ag - hg
+        if hg > ag:
+            current_state[h]["pts"] += 3
+        elif hg < ag:
+            current_state[a]["pts"] += 3
+        else:
+            current_state[h]["pts"] += 1
+            current_state[a]["pts"] += 1
+
+    model = poisson_model(played)
+    rng = random.Random(seed)
+
+    # Poisson draw using Knuth algorithm
+    def poisson(lam):
+        L = math.exp(-lam)
+        k = 0
+        p = 1.0
+        while p > L:
+            k += 1
+            p *= rng.random()
+        return k - 1
+
+    # Simulate
+    first_count = {team: 0 for team in teams}
+    bottom2_count = {team: 0 for team in teams}
+    final_pts = {team: [] for team in teams}
+
+    for _ in range(runs):
+        state = {team: current_state[team].copy() for team in teams}
+
+        for s in scheduled:
+            h, a = s["home_team"], s["away_team"]
+            hg = poisson(expected_goals(model, h, a)[0])
+            ag = poisson(expected_goals(model, h, a)[1])
+
+            if hg > ag:
+                state[h]["pts"] += 3
+            elif hg < ag:
+                state[a]["pts"] += 3
+            else:
+                state[h]["pts"] += 1
+                state[a]["pts"] += 1
+            state[h]["gf"] += hg
+            state[a]["gf"] += ag
+            state[h]["gd"] += hg - ag
+            state[a]["gd"] += ag - hg
+
+        # Rank using same tie-break as official_positions: pts, gd, gf, then name
+        ranked = sorted(teams,
+                       key=lambda t: (state[t]["pts"], state[t]["gd"], state[t]["gf"], t),
+                       reverse=True)
+
+        first_count[ranked[0]] += 1
+        bottom2_count[ranked[12]] += 1
+        bottom2_count[ranked[13]] += 1
+        for team in teams:
+            final_pts[team].append(state[team]["pts"])
+
+    # Sanity checks
+    first_sum = sum(first_count.values())
+    bottom2_sum = sum(bottom2_count.values())
+    if abs(first_sum - runs) > 1e-6 or abs(bottom2_sum - 2 * runs) > 1e-6:
+        raise ValueError(f"Simulation sanity check failed: first_sum={first_sum}, bottom2_sum={bottom2_sum}")
+
+    return {
+        team: {
+            "pts": current_state[team]["pts"],
+            "exp_pts": sum(final_pts[team]) / runs,
+            "p_first": first_count[team] / runs,
+            "p_bottom2": bottom2_count[team] / runs,
+        }
+        for team in teams
+    }
 
 
 if __name__ == "__main__":

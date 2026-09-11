@@ -377,6 +377,18 @@
   .tres .pr, .tres .pw { color:var(--muted); width:80px; }
   .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
 
+  /* ---- Season simulation -------------------------------------------------- */
+  .sim { max-width:1080px; margin:34px auto 0; }
+  .sim table { width:100%; }
+  .sim th { text-align:center; }
+  .sim th.l { text-align:left; }
+  .sim td.l { display:flex; align-items:center; gap:8px; }
+  .sim td.l span { font-weight:600; }
+  .sim td { padding:8px; text-align:right; }
+  .sim .bar { display:flex; height:5px; max-width:180px; margin:5px 0 2px;
+              overflow:hidden; background:var(--track); }
+  .sim .bar i { flex-grow:1; }
+
   /* Two columns as soon as the table fits next to the chart without scrolling. */
   @media (min-width:1400px) {
     /* Nine columns of table need the room more than five matchdays of chart. */
