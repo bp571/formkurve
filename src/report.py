@@ -27,7 +27,8 @@ from analysis import page_data
 from backtest import outcome_of, probabilities
 from explore_predictors import SKIP_MATCHDAYS, compare
 from predict import (
-    MIN_MATCHES, calibration, forecast, load, next_matchday, simulate_season, track_record, walk_forward,
+    MIN_MATCHES, SIM_RUNS, calibration, forecast, load, next_matchday, simulate_season,
+    track_record, walk_forward,
 )
 from rating import EloRating
 from score import clamp, normalize_to_power_score
@@ -77,7 +78,7 @@ def season_href(from_season, to_season):
 Y_GRID = 5
 Y_MIN_SPAN = 15
 
-# One colour per rank slot; only selected teams use theirs, the rest stay grey.
+# One colour per rank slot; only highlighted chart lines use theirs, the rest stay grey.
 PALETTE = [
     "#1b6ca8", "#9c2f4a", "#1c7a58", "#d1802a", "#6d4fa2", "#0f8b9e", "#b8477e",
     "#5f7a1f", "#7a5445", "#3550a0", "#c2562a", "#2e8f3f", "#556070", "#86722a",
@@ -512,7 +513,7 @@ def svg_pitch(table, logos):
         else:
             face = f'<text y="14">{i + 1}</text>'
         p.append(
-            f'<g class="ptok" data-rank="{i}" '
+            f'<g class="ptok" '
             f'transform="translate({at[i]:.1f} {cy + dy}) scale({TOKEN_SCALE})">'
             f'<path class="{cls}" d="{JERSEY}"/>'
             f"{face}"
@@ -522,9 +523,10 @@ def svg_pitch(table, logos):
     return "\n".join(p), lo, hi
 
 
-def svg_chart(table, matchdays, key="series", prefix="line"):
+def svg_chart(table, matchdays, key="series", prefix="line", highlight=()):
     """Inline SVG, one polyline per team, each ending in its rank token so a
-    highlighted line can be named without looking anywhere else."""
+    highlighted line can be named without looking anywhere else. `highlight`
+    names the ranks drawn in colour and on top; the rest stay grey."""
     w, h = 900, 400
     left, right, top, bottom = 44, 34, 18, 36
     tick_x = left - 8
@@ -563,7 +565,9 @@ def svg_chart(table, matchdays, key="series", prefix="line"):
                 f'<text class="tick" x="{x(i):.1f}" y="{h - 13}" '
                 f'text-anchor="middle">{md}</text>'
             )
-    for rank, t in enumerate(table):
+    highlight = set(highlight)
+    for rank in sorted(range(len(table)), key=lambda r: r in highlight):
+        t = table[rank]
         values = t[key]
         points = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in enumerate(values))
         dots = "".join(
@@ -576,7 +580,8 @@ def svg_chart(table, matchdays, key="series", prefix="line"):
             f'<text x="{ex:.1f}" y="{ey + 4.6:.1f}">{rank + 1}</text></g>'
         )
         parts.append(
-            f'<g class="line" id="{prefix}{rank}" style="--c:{PALETTE[rank % len(PALETTE)]}">'
+            f'<g class="line{" sel" if rank in highlight else ""}" id="{prefix}{rank}" '
+            f'style="--c:{PALETTE[rank % len(PALETTE)]}">'
             f'<polyline points="{points}"/>{dots}{end}</g>'
         )
 
@@ -745,10 +750,9 @@ def surface_section(surface):
             <tbody>{"".join(body)}</tbody>
           </table>
         </div>
-        <p class="hint"><strong>Heimbonus</strong> ist, um wie viele Prozentpunkte der Gastgeber
-        besser abschneidet, als die Stärke beider Teams erwarten lässt – +{grass} auf Rasen heißt
-        {grass} Siege mehr aus hundert Heimspielen, über alle Saisons gerechnet und bei dieser
-        Datenmenge ein Hinweis, kein Beweis.</p>"""
+        <p class="hint"><strong>Heimbonus</strong>: um wie viele Prozentpunkte der Gastgeber besser
+        abschneidet, als die Stärke beider Teams erwarten lässt – +{grass} auf Rasen heißt
+        {grass} Siege mehr aus hundert Heimspielen. Ein Hinweis, kein Beweis.</p>"""
 
 
 def comeback_section(marks, first, logos):
@@ -786,9 +790,8 @@ def comeback_section(marks, first, logos):
           Spiele, {pct(first["draw"] / n)} enden remis, {pct(first["loss"] / n)} gehen noch
           verloren.</p><div class="bar">{bar}</div></div>
         </div>
-        <p class="hint">Nur diese Saison, aus den Torminuten: die meisten Punkte aus Spielen mit
-        Rückstand und die meisten aus eigener Führung liegen gelassenen, beides erst ab vier
-        Punkten.</p>"""
+        <p class="hint">Aus den Torminuten dieser Saison: die meisten Punkte nach Rückstand und
+        die meisten aus eigener Führung liegen gelassen.</p>"""
 
 
 def team_stats_by_venue(rows, team):
@@ -816,8 +819,7 @@ def team_stats_by_venue(rows, team):
 
 def team_details_html(table, rows, logos, season, matchdays, match_probs):
     """One section with a team dropdown and one panel per team, all hidden except
-    rank 0. The dropdown is the only thing that switches panels - clicking a row
-    or a jersey highlights a team everywhere else but leaves this section alone.
+    rank 0; the dropdown switches panels.
 
     Each panel shows: head (crest, form rank, form, power, position, W-D-L split),
     season chart (highlighted), results list with probabilities, remaining fixtures."""
@@ -923,11 +925,9 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
       </table>
     </div>
     <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
-    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
-    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
-    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
-    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
-    Regel wie bei der Überraschung des Spieltags.</p>
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A: zu Hause oder
+    auswärts. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell vor dem
+    Anpfiff einen Sieg dieses Teams fand.</p>
 """
 
         # Remaining fixtures
@@ -1028,21 +1028,17 @@ def forecast_section(season, played, logos, forms, scheduled=None):
             f'<td class="xg s-hide">{num(t["xg_home"] + t["xg_away"])}</td></tr>'
         )
 
-    league_goals = sum(int(r["home_goals"]) + int(r["away_goals"]) for r in played) / len(played)
-
     record = track_record(played)
     if record:
         ahead = "vorn" if record["rps"] < record["base_rps"] else "hinten"
         balance = (
-            f'<strong>Bilanz.</strong> {record["hits"]} von {record["n"]} Spielen dieser '
-            f'Saison richtig – gemeint ist jeweils der wahrscheinlichste Ausgang. Als '
-            f'Fehlerwert gerechnet (kleiner ist besser): {num(record["rps"], 3)} gegen '
-            f'{num(record["base_rps"], 3)}, wenn man stur die Liga-Quote tippt, die Prognose '
-            f'liegt also knapp {ahead}. Bei {record["n"]} Spielen heißt das noch nichts; über '
-            f'die Vorsaison gerechnet lag die Trefferquote bei 57&nbsp;%.'
+            f'<strong>Bilanz:</strong> {record["hits"]} von {record["n"]} Spielen dieser '
+            f'Saison richtig; als Fehlerwert {num(record["rps"], 3)} gegen '
+            f'{num(record["base_rps"], 3)} für die stur getippte Liga-Quote, die Prognose '
+            f'liegt also knapp {ahead}.'
         )
     else:
-        balance = "<strong>Bilanz.</strong> Noch zu wenige Spiele für eine Bilanz."
+        balance = "<strong>Bilanz:</strong> noch zu wenige Spiele."
 
     return f"""<section class="fcast">
     <h2>Prognose für Spieltag {matchday}</h2>
@@ -1062,25 +1058,11 @@ def forecast_section(season, played, logos, forms, scheduled=None):
         </tbody>
       </table>
     </div>
-    <div class="cols hints">
-    <p class="hint"><strong>Wie das gerechnet wird.</strong> Aus allen bisherigen Ergebnissen
-    bekommt jedes Team eine Angriffs- und eine Abwehrstärke. Daraus folgt, wie viele Tore beide
-    Seiten in dieser Paarung im Schnitt erzielen – Heimvorteil eingerechnet –, und aus dem
-    Abstand zwischen beiden werden die drei Prozentwerte. Die Umrechnung ist an der kompletten
-    Vorsaison geeicht, nicht geschätzt. <strong>Tore erwartet</strong> ist die Summe für beide
-    Mannschaften, also eher ein Hinweis auf offenes Spiel oder Abtasten als auf den Sieger:
-    Der Ligaschnitt dieser Saison liegt bei {num(league_goals)} Toren pro Spiel.
-    <strong>Topspiel</strong> markiert die Paarung mit der besten gemeinsamen Form beider
-    Teams – eine Auszeichnung nach der Formtabelle oben, keine Aussage über den Ausgang.</p>
-    <p class="hint">Zwei Dinge fallen auf und sind beide richtig so. Ein <strong>Remis ist nie
-    der wahrscheinlichste Ausgang</strong>, obwohl rund jedes sechste Spiel remis endet – für
-    ein Unentschieden müssen beide Seiten dieselbe Zahl treffen, jede einzelne Torzahl ist
-    unwahrscheinlicher als „irgendein Sieg“. Und die <strong>Prozente liegen eng beieinander</strong>,
-    auch wenn ein Team klar stärker eingeschätzt wird. Das ist gemessen und nicht gedämpft: Ein
-    ganzes Tor Vorsprung in der Erwartung verschiebt die Siegchance in dieser Liga nur um rund
-    sechs Prozentpunkte, weil die Ergebnisse hier zu stark streuen, um mehr herzugeben.</p>
+    <p class="hint">Aus den bisherigen Ergebnissen bekommt jedes Team eine Angriffs- und eine
+    Abwehrstärke; daraus folgen die erwarteten Tore und die drei Prozentwerte. Dass ein Remis nie
+    vorn liegt und die Prozente eng beieinander liegen, ist so gemessen – warum, steht in den
+    <a href="#methodik">Erklärungen</a>.</p>
     <p class="hint">{balance}</p>
-    </div>
   </section>
 """
 
@@ -1137,12 +1119,9 @@ def simulation_section(season, rows, logos, scheduled):
         </tbody>
       </table>
     </div>
-    <p class="hint"><strong>Wie das gerechnet wird.</strong> Die verbleibenden {len(scheduled)} Spiele werden {4000} mal
-    mit den gleichen erwarteten Toren gespielt wie in der Prognose daneben, die Tabellen gezählt.
-    <strong>Was das nicht ist:</strong> Die Stärken sind die aktuelle Schätzung und werden selbst nicht variiert,
-    so dass die Streuung wenn überhaupt zu eng ist; früh in der Saison ist die aktuelle Schätzung
-    meist der Ligadurchschnitt, die Prozente wiederholen also die Tabelle und die verbleibenden Spiele;
-    ein Team unter &lt;1&nbsp;% ist nicht bei null.</p>
+    <p class="hint">Die verbleibenden {len(scheduled)} Spiele werden {SIM_RUNS}-mal mit den
+    erwarteten Toren der Prognose durchgespielt und die Tabellen gezählt. Unter 1&nbsp;% heißt
+    nicht null.</p>
   </section>
 """
 
@@ -1163,8 +1142,7 @@ def predictor_section():
     return f"""<section class="fcast">
     <h2>Was besser sein müsste – und es nicht ist</h2>
     <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
-    umgerechnet und an der Saison {SEASON_PREVIOUS} nachgerechnet, ab Spieltag
-    {SKIP_MATCHDAYS + 1}.</p>
+    umgerechnet und an der Saison {SEASON_PREVIOUS} nachgerechnet.</p>
     <div class="card">
       <table>
         <thead>
@@ -1175,14 +1153,135 @@ def predictor_section():
         </tbody>
       </table>
     </div>
-    <p class="hint"><strong>Fehler</strong> ist der mittlere Prognosefehler über alle Spiele,
-    kleiner ist besser. <strong>Vorsprung</strong> ist der Abstand zur simpelsten aller
-    Auskünfte – „in dieser Liga gewinnt meistens das Heimteam“ –, in Tausendsteln und mit
+    <p class="hint">Kleinerer Fehler ist besser; <strong>Vorsprung</strong> ist der Abstand zur
+    simplen Auskunft „meistens gewinnt das Heimteam“. Kein Ansatz ist nachweisbar besser als
+    diese Auskunft – deshalb ist die Prognose ein Blickwinkel, kein Tipp.</p>
+  </section>
+"""
+
+
+def method_section(has_future):
+    """The long-form explanations behind every number on the page, on a tab of
+    their own so the dashboard can keep its notes to a sentence or two. Static
+    prose except for the few constants it quotes."""
+    rest = ("""
+    <p><strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, ohne
+    Heimvorteil verrechnet; die Aufteilung dahinter sagt, wie viele davon zu Hause sind.</p>"""
+            if has_future else "")
+    return f"""<section class="method" id="methodik">
+    <h2>Erklärungen</h2>
+    <p class="sub">Wie jede Zahl auf dieser Seite zustande kommt – für alle, die es genau
+    wissen wollen.</p>
+
+    <h3>Form und Saison</h3>
+    <p>Beide Werte sind eine Elo-Wertung: Jedes Team startet bei 1500 Punkten, nach jedem Spiel
+    wandern Punkte vom Verlierer zum Gewinner. Wie viele, hängt von drei Dingen ab – wie
+    überraschend das Ergebnis nach beiden Wertungen war, wie hoch es ausfiel (logarithmisch
+    gedämpft, ein 6:0 zählt nicht dreimal so viel wie ein 2:0) und ob das Heimteam gewonnen hat,
+    das mit einem Heimvorteil von 100 Punkten rechnet. Die Wertung wird für die Anzeige auf eine
+    Skala von 0 bis 100 umgerechnet, 50 ist Ligadurchschnitt.</p>
+    <p><strong>Saison</strong> läuft über alle bisherigen Spiele, wird aber nach wenigen Spielen
+    Richtung 50 gedrückt: Ein Team mit drei Siegen aus drei Spielen ist nicht doppelt so stark
+    wie eines mit einem Sieg. Deshalb liegt die ganze Liga nach fünf Spieltagen eng beieinander –
+    das ist richtig, nicht kaputt. <strong>Form</strong> rechnet dieselbe Wertung nur über die
+    letzten {FORM_WINDOW} Spieltage, jedes Mal neu von 1500 aus und ohne diese Dämpfung: Sie
+    beschreibt, was zuletzt war, und beansprucht nicht, die Stärke zu messen. Gemessen an der
+    Vorsaison sagt sie den nächsten Spieltag nicht besser voraus als die Tabelle – deshalb
+    steht sie auf der Seite als Beschreibung, nicht als Prognose.</p>
+
+    <h3>Formtabelle</h3>
+    <p>Sortiert nach der Form, nicht nach der Saison. <strong>+/&minus;</strong> ist die
+    Veränderung der Form gegenüber dem letzten Spieltag. Die Punkte unter dem Teamnamen sind
+    dieselben fünf Spiele, chronologisch von links nach rechts: grün Sieg, grau Unentschieden,
+    rot Niederlage. <strong>Tabelle</strong> ist der offizielle Platz; der Wert dahinter ist die
+    Differenz zum Platz in dieser Formtabelle – <span class="chip up">+2</span> heißt, das Team
+    steht hier zwei Plätze besser als in der Tabelle, spielt also gerade über seinem
+    Saisonstand.</p>{rest}
+    <p>Zwei Marker, beide nach fester Regel: <strong>Mannschaft der Stunde</strong> steht beim
+    Team mit dem größten Vorsprung dieser Formtabelle auf den eigenen Tabellenplatz, mindestens
+    zwei Plätze. <strong>Formsprung</strong> steht beim größten Zugewinn gegenüber dem letzten
+    Spieltag, mindestens 1,5 Punkte, und nie auf derselben Zeile. Sind die Abstände kleiner,
+    bleiben die Marker weg – ein Platz oder ein halber Punkt liegt im Zufall.</p>
+
+    <h3>Überraschung des Spieltags</h3>
+    <p>Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu diesem
+    Spieltag: der Sieg, dem sie vorher die kleinste Chance gab, wenn sie unter
+    {pct(SURPRISE_MAX_P)} lag. Unentschieden zählen nicht, weil das Remis hier in jeder
+    Paarung die unwahrscheinlichste Variante ist – sonst wäre fast jede Woche ein 1:1 die
+    Überraschung. Dieselbe Regel markiert die Überraschungen im Reiter Team im Detail.</p>
+
+    <h3>Belag und Heimbonus</h3>
+    <p>Aus den Spielberichten: Tore pro Spiel und Heimbonus je Belag, über alle Saisons
+    gerechnet, weil eine allein zu dünn ist. <strong>Heimbonus</strong> ist der Unterschied
+    zwischen dem, was die Heimteams tatsächlich geholt haben, und dem, was die Stärke beider
+    Teams ohne Heimvorteil erwarten ließe, in Prozentpunkten. Dass Kunstrasenplätze mehr
+    Heimbonus zeigen, könnte auch daran liegen, dass die stärkeren Vereine auf Kunstrasen
+    spielen – die Rechnung zieht das ab, aber der Rest ist bei dieser Datenmenge ein Hinweis
+    und kein Beweis.</p>
+
+    <h3>Rückstand und Führung</h3>
+    <p>Aus den Torminuten dieser Saison. <strong>Comeback-Team</strong> ist das Team mit den
+    meisten Punkten aus Spielen, in denen es zurücklag, <strong>Führung verspielt</strong> das
+    mit den meisten Punkten, die es aus eigener Führung noch hergegeben hat. Beide Marker
+    brauchen mindestens vier Punkte, also mehr als einen Sieg; bei Gleichstand gewinnt das Team,
+    das dafür weniger Spiele brauchte. Es sind Zählwerte, keine Quoten. Darunter steht, wie
+    oft das Team mit dem ersten Tor am Ende gewinnt – der Maßstab, an dem ein Comeback zu
+    lesen ist.</p>
+
+    <h3>Team im Detail</h3>
+    <p><strong>Siegchance vorher</strong> ist die Prognose für dieses Spiel, gerechnet nur aus
+    den Ergebnissen bis dahin, aus Sicht dieses Teams. Als <strong>Überraschung</strong> gilt
+    ein Sieg unter {pct(SURPRISE_MAX_P)}, dieselbe Regel wie oben. <strong>Stärke</strong> bei
+    den verbleibenden Gegnern ist deren Saisonwert. Der Saisonverlauf zeigt den Saisonwert nach
+    jedem Spieltag; die anderen Teams bleiben grau zum Vergleich.</p>
+
+    <h3>Prognose</h3>
+    <p>Aus allen bisherigen Ergebnissen bekommt jedes Team eine Angriffs- und eine
+    Abwehrstärke. Daraus folgt, wie viele Tore beide Seiten in dieser Paarung im Schnitt
+    erzielen – Heimvorteil eingerechnet –, und aus dem Abstand zwischen beiden werden die drei
+    Prozentwerte. Diese Umrechnung ist an der kompletten Saison {SEASON_PREVIOUS} geeicht, nicht
+    geschätzt. <strong>Tore erwartet</strong> ist die Summe für beide Mannschaften, also eher
+    ein Hinweis auf offenes Spiel oder Abtasten als auf den Sieger. <strong>Topspiel</strong>
+    markiert die Paarung mit der besten gemeinsamen Form beider Teams – eine Auszeichnung nach
+    der Formtabelle, keine Aussage über den Ausgang.</p>
+    <p>Zwei Dinge fallen auf und sind beide richtig so. Ein <strong>Remis ist nie der
+    wahrscheinlichste Ausgang</strong>, obwohl rund jedes sechste Spiel remis endet – für ein
+    Unentschieden müssen beide Seiten dieselbe Zahl treffen, jede einzelne Torzahl ist
+    unwahrscheinlicher als „irgendein Sieg“. Und die <strong>Prozente liegen eng
+    beieinander</strong>, auch wenn ein Team klar stärker eingeschätzt wird. Das ist gemessen
+    und nicht gedämpft: Ein ganzes Tor Vorsprung in der Erwartung verschiebt die Siegchance in
+    dieser Liga nur um rund sechs Prozentpunkte, weil die Ergebnisse hier zu stark streuen, um
+    mehr herzugeben.</p>
+    <p><strong>Bilanz</strong> zählt, wie oft der wahrscheinlichste Ausgang eingetreten ist,
+    und rechnet daneben einen Fehlerwert (kleiner ist besser), der auch die Höhe der Prozente
+    bewertet. Verglichen wird mit der stur getippten Liga-Quote – „meistens gewinnt das
+    Heimteam“ –, dem ehrlichen Nullpunkt. Nichts davon wird gespeichert: Jede Prognose folgt
+    allein aus den Ergebnissen davor, die Bilanz wird jedes Mal aus dem Spielplan neu gerechnet.
+    Über die Vorsaison lag die Trefferquote bei 57&nbsp;%.</p>
+
+    <h3>Saisonausblick</h3>
+    <p>Die verbleibenden Spiele werden {SIM_RUNS}-mal mit denselben erwarteten Toren wie in der
+    Prognose durchgespielt und die entstehenden Tabellen gezählt. Die Stärken sind dabei die
+    aktuelle Schätzung und werden selbst nicht variiert, die Streuung ist also wenn überhaupt zu
+    eng. Früh in der Saison ist diese Schätzung meist der Ligadurchschnitt, die Prozente
+    wiederholen dann die Tabelle und die verbleibenden Spiele. Ein Team unter 1&nbsp;% ist nicht
+    bei null.</p>
+
+    <h3>Was besser sein müsste</h3>
+    <p>Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
+    Saison {SEASON_PREVIOUS} ab Spieltag {SKIP_MATCHDAYS + 1} nachgerechnet.
+    <strong>Fehler</strong> ist der mittlere Prognosefehler über alle Spiele, kleiner ist
+    besser. <strong>Vorsprung</strong> ist der Abstand zur Liga-Quote in Tausendsteln, mit dem
     Standardfehler dahinter. Kein einziger Ansatz erreicht zwei Standardfehler: Keiner ist
-    nachweisbar besser als diese Auskunft. Auch die Reihenfolge in der Tabelle ist selbst
+    nachweisbar besser als diese simple Auskunft. Auch die Reihenfolge in der Tabelle ist selbst
     Zufall – rechnet man die Eichung strenger, tauschen die Zeilen die Plätze. Deshalb ist die
     Prognose ein Blickwinkel und kein Tipp, und deshalb bleibt die Form auf dieser Seite eine
     Beschreibung.</p>
+
+    <h3>Was sich nicht messen lässt</h3>
+    <p>fussball.de veröffentlicht für Amateurligen nur Ergebnisse, Torminuten, Karten, Anstoß,
+    Platz und Zuschauer. Wer ein Spiel dominiert hat, wer verletzt fehlt, wie der Platz oder das
+    Wetter war – dafür gibt es keine Daten, und diese Seite baut dafür auch keine Ersatzwerte.</p>
   </section>
 """
 
@@ -1244,30 +1343,28 @@ def render(season, rows):
     if sim_section:
         outlook += sim_section
 
-    # Three questions, three tabs - but only where all three exist. An archive
-    # page has no team panels and nothing to forecast, so it stays one sheet.
+    # One tab per question, and the explanations last. An archive page has no
+    # team panels and nothing to forecast, so the predictor comparison joins
+    # the explanations there instead of having a tab of its own.
+    views = [("form", "Form", None)]
     if team_panels_html:
-        tabs_html = """  <div class="tabs" role="tablist">
-    <button role="tab" id="t-form" aria-controls="v-form" aria-selected="true" data-view="form">Form</button>
-    <button role="tab" id="t-team" aria-controls="v-team" aria-selected="false" data-view="team">Team im Detail</button>
-    <button role="tab" id="t-prognose" aria-controls="v-prognose" aria-selected="false" data-view="prognose">Prognose</button>
-  </div>
-"""
-        form_view_attrs = ' role="tabpanel" aria-labelledby="t-form"'
-        team_view = (f'  <div class="view" id="v-team" role="tabpanel" aria-labelledby="t-team" hidden>\n'
-                     f'{team_panels_html}  </div>\n')
-        outlook_view = (f'  <div class="view" id="v-prognose" role="tabpanel" aria-labelledby="t-prognose" hidden>\n'
-                        f'{outlook}\n  </div>\n')
+        views.append(("team", "Team im Detail", team_panels_html))
+        views.append(("prognose", "Prognose", outlook))
+        views.append(("methodik", "Erklärungen", method_section(has_future)))
     else:
-        tabs_html = ""
-        form_view_attrs = ""
-        team_view = ""
-        outlook_view = f'  <div class="view" id="v-prognose">\n{outlook}\n  </div>\n'
+        views.append(("methodik", "Erklärungen", method_section(has_future) + outlook))
+    tabs_html = "  <div class=\"tabs\" role=\"tablist\">\n" + "".join(
+        f'    <button role="tab" id="t-{vid}" aria-controls="v-{vid}" '
+        f'aria-selected="{"true" if vid == "form" else "false"}" data-view="{vid}">{label}</button>\n'
+        for vid, label, _ in views) + "  </div>\n"
+    form_view_attrs = ' role="tabpanel" aria-labelledby="t-form"'
+    other_views = "".join(
+        f'  <div class="view" id="v-{vid}" role="tabpanel" aria-labelledby="t-{vid}" hidden>\n'
+        f'{content}\n  </div>\n' for vid, _, content in views[1:])
 
     body_rows = []
     for rank, t in enumerate(table):
         w, d, l = t["record"]
-        side = "pos" if t["form"] >= 50 else "neg"
         if t["delta"] is None:
             delta = '<span class="flat">–</span>'
         else:
@@ -1282,7 +1379,8 @@ def render(season, rows):
             cls = "up" if diff > 0 else "down"
             gap = f'<span class="chip {cls}">{"+" if diff > 0 else "−"}{abs(diff)}</span>'
         segs = "".join(f'<i class="{r}"></i>' for r in t["dots"])
-        tok = f'<span class="tok {side}">{rank + 1}</span>'
+        zone = " top" if rank < 3 else (" bottom" if rank >= len(table) - 3 else "")
+        tok = f'<span class="tok{zone}">{rank + 1}</span>'
         crest = logos.get(team_slug(t["team"]))
         crest = f'<img class="lg" src="{crest}" alt="">' if crest else ""
         if rank == hot_rank:
@@ -1301,9 +1399,7 @@ def render(season, rows):
         # two markers are told apart by how loudly they are marked.
         rest_html = rest_cell(t.get("remaining")) if has_future else ""
         body_rows.append(
-            f'<tr data-rank="{rank}" tabindex="0" '
-            f'class="{"marked" if rank == hot_rank else ""}" '
-            f'style="--c:{PALETTE[rank % len(PALETTE)]};--i:{rank}">'
+            f'<tr class="{"marked" if rank == hot_rank else ""}">'
             f'<td class="rank">{tok}</td>'
             f'<td class="team"><div class="tc">{crest}<div>'
             f'<span class="tn">{html.escape(t["team"])}</span>'
@@ -1326,12 +1422,8 @@ def render(season, rows):
     if season == SEASON_CURRENT:
         side_section = f"""<h2>Überraschung des Spieltags</h2>
         <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
-        Unentschieden zählen nicht – die sind hier in jeder Paarung die unwahrscheinlichste
-        Variante.</p>
-        {surprise_card(rows, table, matchday, logos)}
-        <p class="hint">Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu
-        diesem Spieltag; unter 25&nbsp;% gilt als Überraschung, <strong>Form</strong> und
-        <strong>Tabelle</strong> stehen vor und nach dem Spieltag.</p>"""
+        Unentschieden zählen nicht.</p>
+        {surprise_card(rows, table, matchday, logos)}"""
         # Two more cards from the match detail pages, both absent on a clone
         # without data/details.csv rather than rendered empty.
         surface, marks, first = page_data(season)
@@ -1342,15 +1434,12 @@ def render(season, rows):
         side_section = f"""<h2>Formverlauf</h2>
         <p class="sub">Die Form an jedem Spieltag, also immer das Fenster der fünf davor.
         Diese Linien springen – das ist gewollt, sie zeigen Phasen und keine Bilanz.</p>
-        <div class="card chart">{svg_chart(table, matchdays, "fseries", "form")}</div>
-        <p class="hint">X-Achse: Spieltag, Y-Achse: Form. Eine Zeile in der Tabelle antippen
-        hebt das Team hier und in der Aufstellung hervor.</p>"""
+        <div class="card chart">{svg_chart(table, matchdays, "fseries", "form", range(3))}</div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Form. Die drei formstärksten Teams sind
+        farbig, die anderen grau.</p>"""
 
     # Only render Rest column header when there are scheduled fixtures
     rest_header = '<th class="s-hide">Rest</th>' if has_future else ""
-    rest_legend = ('<strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, ohne '
-                   'Heimvorteil verrechnet; die Aufteilung dahinter sagt, wie viele davon zu Hause sind. '
-                   if has_future else "")
 
     return f"""<!DOCTYPE html>
 <html lang="de">
@@ -1377,7 +1466,7 @@ def render(season, rows):
     /* Uncoated stock and printing ink: this is a notice pinned up after the
        weekend, not a broadcast graphic. */
     --paper:#e7e4dd; --card:#fcfbf8; --ink:#23201b; --muted:#6b6459;
-    --line:#d8d3c8; --track:#dcd7cc; --sel:#f1eee4;
+    --line:#d8d3c8; --track:#dcd7cc;
     /* Above and below the 50-point league average. These two mean the same
        thing everywhere on the page and are the one thing that must not drift. */
     --up:#16764f; --down:#96263f; --draw:#a9a294;
@@ -1420,17 +1509,18 @@ def render(season, rows):
   strong, b {{ font-weight:600; }}
   a {{ color:inherit; text-underline-offset:2px; }}
   a:focus-visible {{ outline:2px solid currentColor; outline-offset:3px; }}
-  :where(tr, .ptok path, .line polyline) {{ transition:background-color .12s ease,
-    box-shadow .12s ease, stroke .12s ease, stroke-width .12s ease; }}
+  .line polyline {{ transition:stroke .12s ease, stroke-width .12s ease; }}
   @media (prefers-reduced-motion:reduce) {{ * {{ transition:none !important; }} }}
 
-  /* ---- The token: one numbered disc, coloured by side of the 50 average ---- */
+  /* ---- The token: one numbered disc in plain ink, coloured only at the ends
+     of the form table - the top three and the bottom three. Zones of this
+     table, not the side of the average the rest of the page colours by. */
   .tok {{ display:inline-flex; align-items:center; justify-content:center;
           width:27px; height:27px; border-radius:50%; flex:0 0 auto;
-          font:700 14px var(--display); color:#fff;
+          font:700 14px var(--display); color:var(--paper); background:var(--ink);
           font-variant-numeric:tabular-nums; }}
-  .tok.pos {{ background:var(--up); }}
-  .tok.neg {{ background:var(--down); }}
+  .tok.top {{ background:var(--up); }}
+  .tok.bottom {{ background:var(--down); }}
 
   /* ---- Masthead ----------------------------------------------------------- */
   /* No dark hero band: the sheet starts on paper and the heavy rule under the
@@ -1475,8 +1565,7 @@ def render(season, rows):
      the whole league at once, and the tokens need the room. */
   .pitchsec {{ margin:0 0 6px; }}
 
-  /* The dashboard below it: table on the left, the form chart on the right, so
-     that clicking a team is visible in all three at once. */
+  /* The dashboard below it: table on the left, the side cards on the right. */
   .dash {{ display:grid; grid-template-columns:1fr; gap:26px; align-items:start; }}
   .col section + section {{ margin-top:22px; }}
 
@@ -1520,13 +1609,6 @@ def render(season, rows):
   .rt {{ color:var(--muted); font-size:13px; }}
   .rs {{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }}
 
-  tbody tr[data-rank] {{ cursor:pointer; }}
-  tbody tr[data-rank]:hover {{ background:#f2efe7; }}
-  tbody tr:focus-visible {{ outline:2px solid var(--ink); outline-offset:-2px; }}
-  /* One treatment for every selected row. Tinting each row with its own colour
-     read as several different states instead of one. */
-  tr.sel {{ background-color:var(--sel); }}
-
   /* The row an editorial marker points at, gone over with a highlighter. Two
      strokes, neither of them the width of the row - a marker starts and stops
      where the hand stops, and the second pass never lands on the first.
@@ -1539,8 +1621,6 @@ def render(season, rows):
             background-size:63% 64%, 46% 42%;
             background-position:2% 56%, 10% 88%;
             background-image:{STROKE_A}, {STROKE_B}; }}
-  tr.sel td:first-child {{ box-shadow:inset 4px 0 0 var(--c); }}
-  tr.sel .tok {{ box-shadow:0 0 0 2px var(--sel), 0 0 0 4px var(--c); }}
 
   .up {{ color:var(--up); }} .down {{ color:var(--down); }} .flat {{ color:var(--muted); }}
   td.tab {{ white-space:nowrap; }}
@@ -1640,7 +1720,6 @@ def render(season, rows):
   .half {{ stroke:var(--chalk); stroke-width:1.6; }}
   .stick {{ stroke:rgba(255,255,255,.19); stroke-width:1.4; }}
   .axis {{ stroke:rgba(255,255,255,.15); stroke-width:1; stroke-dasharray:3 5; }}
-  .ptok {{ cursor:pointer; }}
   .ptok path {{ stroke:var(--turf); stroke-width:2.5; stroke-linejoin:round; }}
   .ptok path.pos {{ fill:var(--up-l); }}
   .ptok path.neg {{ fill:var(--down-l); }}
@@ -1650,7 +1729,6 @@ def render(season, rows):
   .ptok circle.rkb {{ fill:var(--turf); stroke:#fff; stroke-width:1.5; }}
   .ptok text {{ fill:var(--turf); font:700 23px var(--display); text-anchor:middle; }}
   .ptok text.rk {{ fill:#fff; font-size:12px; }}
-  .ptok.sel path {{ stroke:#fff; stroke-width:3.5; }}
   .pends {{ display:flex; justify-content:space-between; gap:12px; margin:0 0 5px; }}
   .pend {{ display:flex; align-items:center; gap:7px; margin:0;
            color:var(--on-turf); font-size:12.5px; }}
@@ -1765,6 +1843,14 @@ def render(season, rows):
   .view[hidden] {{ display:none; }}
   /* The tab strip already rules the view off, so the first block starts flush. */
   .tabs ~ .view > :first-child {{ margin-top:26px; }}
+
+  /* ---- Explanations ------------------------------------------------------ */
+  /* Plain running text at a readable measure, one heading per thing on the
+     sheet it explains. */
+  .method {{ max-width:70ch; }}
+  .method h3 {{ margin:26px 0 6px; font:600 17px/1.2 var(--display); }}
+  .method p {{ margin:0 0 12px; font-size:15.5px; line-height:1.6; }}
+  .method + .fdash {{ margin-top:44px; }}
 
   /* ---- Team detail panels ------------------------------------------------ */
   .tdet h2 {{ margin-top:0; }}
@@ -1917,7 +2003,7 @@ def render(season, rows):
       </div>
       <div class="pwrap">{pitch_svg}</div>
       <p class="phead">Links liegen die Teams unter dem Ligadurchschnitt, rechts davon die
-      darüber. Ein Trikot antippen hebt das Team überall hervor.</p>
+      darüber.</p>
     </div>
   </section>
 
@@ -1948,55 +2034,26 @@ def render(season, rows):
     <div class="col chartcol">
       <section>
         {side_section}
-        <p class="hint legend"><strong>Form</strong> rechnet nur die letzten fünf Spieltage, dafür
-        mit Gegnerstärke und Torverhältnis: 50 ist Ligadurchschnitt, darüber heißt besser als der
-        Schnitt. <strong>Saison</strong> daneben ist der Wert über alle bisherigen Spiele – wer
-        dort hoch steht und in der Form tief, hat eine gute Saison, aber gerade eine schwache
-        Phase. {rest_legend}<strong>Tabelle</strong> ist der offizielle Platz; der Wert dahinter ist die
-        Differenz zum Platz in dieser Formtabelle. <span class="chip up">+2</span> heißt: hier
-        zwei Plätze besser als in der Tabelle, das Team spielt gerade also über seinem
-        Saisonstand. <strong>+/&minus;</strong> ist die Veränderung der Form gegenüber dem
-        letzten Spieltag. Die Punkte unter dem Teamnamen sind dieselben fünf Spiele, chronologisch
-        von links nach rechts: grün Sieg, grau Unentschieden, rot Niederlage.
-        Zwei Marker, beide nach fester Regel: <strong>Mannschaft der Stunde</strong> steht beim
-        Team mit dem größten Vorsprung dieser Formtabelle auf den eigenen Tabellenplatz,
-        <strong>Formsprung</strong> beim größten Zugewinn gegenüber dem letzten Spieltag. Sind
-        die Abstände zu klein, um etwas zu bedeuten, bleiben sie weg.</p>
+        <p class="hint legend"><strong>Form</strong> zählt nur die letzten fünf Spieltage,
+        <strong>Saison</strong> alle bisherigen – 50 ist jeweils Ligadurchschnitt. Der Wert hinter
+        dem Tabellenplatz ist der Abstand zur Formtabelle: <span class="chip up">+2</span> heißt
+        zwei Plätze besser als in der offiziellen Tabelle. Alle Spalten und Marker:
+        <a href="#methodik">Erklärungen</a>.</p>
       </section>
     </div>
   </div>
   </div>
-{team_view}{outlook_view}  <footer>
+{other_views}  <footer>
     <p>Datenquelle: <a href="{SOURCE_URL}">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
     Privates, nicht-kommerzielles Projekt. Stand der Berechnung: {generated}</p>
   </footer>
 </main>
 <script>
-  const rows = [...document.querySelectorAll('tbody tr[data-rank]')];
-  const tokens = [...document.querySelectorAll('.ptok')];
   const panels = [...document.querySelectorAll('.tpanel')];
   const picker = document.getElementById('tpick');
-  const selected = new Set(['0', '1', '2']);
 
-  function apply() {{
-    rows.forEach(tr => {{
-      const on = selected.has(tr.dataset.rank);
-      tr.classList.toggle('sel', on);
-      const line = document.getElementById('form' + tr.dataset.rank);  // archive pages only
-      if (!line) return;
-      line.classList.toggle('sel', on);
-      if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
-    }});
-    tokens.forEach(g => g.classList.toggle('sel', selected.has(g.dataset.rank)));
-  }}
-
-  function toggle(rank) {{
-    selected.has(rank) ? selected.delete(rank) : selected.add(rank);
-    apply();
-  }}
-
-  // The detail section follows the dropdown only, independent of the highlight.
+  // The detail section follows the dropdown.
   function showDetail(rank) {{
     panels.forEach(p => {{
       p.hidden = p.dataset.rank !== rank;
@@ -2036,19 +2093,16 @@ def render(season, rows):
     }}));
     const start = location.hash.slice(1);
     showView(tabs.some(b => b.dataset.view === start) ? start : 'form');
+    // In-page links to a tab (the notes point at #methodik) open it.
+    window.addEventListener('hashchange', () => {{
+      const id = location.hash.slice(1);
+      if (!tabs.some(b => b.dataset.view === id)) return;
+      showView(id);
+      document.querySelector('.tabs').scrollIntoView();
+    }});
   }} else {{
     centrePitch();
   }}
-
-  rows.forEach(tr => {{
-    tr.addEventListener('click', () => toggle(tr.dataset.rank));
-    tr.addEventListener('keydown', e => {{
-      if (e.key === 'Enter' || e.key === ' ') {{ e.preventDefault(); toggle(tr.dataset.rank); }}
-    }});
-  }});
-  tokens.forEach(g => g.addEventListener('click', () => toggle(g.dataset.rank)));
-
-  apply();
 </script>
 </body>
 </html>

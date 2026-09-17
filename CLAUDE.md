@@ -208,6 +208,13 @@ seasons):
   (both seasons point the same way). **A hint, and the page says so; do not sell it as a finding.**
   The eight cinder-pitch matches are winter stand-ins and an anecdote. No per-club venue term
   follows from this — the split-half finding above still stands.
+- **Pitch, not club, and not the visitor's habit** (`surface_splits`, same residual). Cut by the
+  visitor's usual surface, turf clubs visiting turf lose most (+26 ± 5 for the host), grass clubs
+  visiting turf +15 ± 5, anyone visiting grass +5 to +9 — so "grass teams cannot handle turf" is
+  wrong, and there is nothing to correct for on the away side. Within the five clubs that hosted
+  on both surfaces in one season: grass +15 ± 8 (n=34), turf +27 ± 9 (n=21); grass clubs moved to
+  a turf stand-in +27 (n=11). Every cut points the same way at 1–2 se. **Do not word the page
+  more strongly than "hint"; do not add an away-surface term.**
 - **The team scoring first wins 71 %** (2025/26, 175 matches with goals), 13 % draw, 17 % lose;
   2026/27 so far 73/13/13. That rate is the reference the comeback markers are read against.
 
@@ -228,7 +235,7 @@ vs. previous matchday, season power score, matches played, record, goals, goal d
 table position with its distance to the form rank), a full-width pitch laying the league out by
 form, beside the table the *Überraschung des Spieltags* card, the *Belag* table (goals per match and
 Heimbonus per surface, all seasons pooled because one is too thin) and the *Rückstand und Führung*
-card — clicking a row highlights that team in table and pitch at once — then the next matchday's forecast and the predictor table behind it,
+card — then the next matchday's forecast and the predictor table behind it,
 side by side in the same grid, and a source link.
 
 Archive pages (`docs/<season>/index.html` for finished seasons) carry the dashboard only — pitch,
@@ -239,10 +246,13 @@ page opens directly on the facts. A season switcher in the masthead links betwee
 current and archive. The chart was replaced on the current page because fourteen lines whose
 neighbouring points share four of five matches read as spaghetti.
 
-**Every explanation sits with the thing it explains.** The page carries no essay at the end: the
-legend for the form table, the notes under the forecast and the note under the predictor table are
-all the prose there is, and each one is next to its own table. The one sentence that cannot be
-dropped is the disclaimer in the form table's subline — five matches describe, they do not predict.
+**Notes under tables are one or two sentences, for casual readers.** The long explanations —
+how form and season are computed, every column and marker rule, why the forecast's percentages
+are flat, the Monte Carlo caveats, the predictor comparison in full — live in
+`report.method_section()` on the *Erklärungen* tab (also on archive pages, where the predictor
+table joins it because there is no forecast to sit beside). Short notes link there with
+`#methodik`. The one sentence that cannot be dropped is the disclaimer in the form table's
+subline — five matches describe, they do not predict.
 
 **The page is sorted by form, not by the power score.** The table already tells a reader who has
 the points; what it cannot tell them is that the team in twelfth has won four of five. That gap is
