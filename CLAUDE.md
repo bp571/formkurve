@@ -19,11 +19,12 @@ each matchday. Everything below is implemented; [Not implemented](#not-implement
 ## Commands
 
 ```
-python run.py                     # current season (2026/27): scrape -> rate -> write the page
-python run.py --season 2025/26    # a past season: writes to docs/2025-26/index.html
+python run.py                     # scrape + rate + write all pages (current + snapshots for 2026/27)
+python run.py --season 2025/26    # archive page only, no snapshots (26 matchdays already done)
 python run.py --cached            # parse saved pages in data/raw, no network
-python src/report.py              # rebuild docs/index.html from data/matches.csv alone, no network
+python src/report.py              # rebuild docs/ from data/matches.csv alone (all snapshots + current)
 python src/report.py --season 2025/26  # rebuild docs/2025-26/index.html
+python src/report.py --matchday 5 # rebuild only Spieltag 5 snapshot for debugging
 python src/backtest.py            # re-run the walk-forward evaluation
 python src/predict.py             # next matchday's probabilities in the terminal
 python src/explore_predictors.py  # the predictor comparison the page publishes
@@ -33,6 +34,7 @@ python src/analysis.py [--all]    # surface effect and comeback tables in the te
 ```
 
 After a matchday: `python run.py`, then commit and push — GitHub Pages rebuilds in about a minute.
+The current season generates 26 matchday snapshots + 1 current page (docs/index.html); archived seasons remain as single pages.
 
 ## Pipeline
 
@@ -229,14 +231,20 @@ Two methodological notes:
 
 ## The page
 
-[src/report.py](src/report.py) writes one self-contained `docs/index.html` — no external assets, no
-build step, no image files. Form-sorted table (rank, team with its last five results, form, change
-vs. previous matchday, season power score, matches played, record, goals, goal difference, official
-table position with its distance to the form rank), a full-width pitch laying the league out by
-form, beside the table the *Überraschung des Spieltags* card, the *Belag* table (goals per match and
-Heimbonus per surface, all seasons pooled because one is too thin) and the *Rückstand und Führung*
-card — then the next matchday's forecast and the predictor table behind it,
-side by side in the same grid, and a source link.
+[src/report.py](src/report.py) writes pages from `matches.csv`. The current season page (`docs/index.html`) 
+contains the full dashboard; assets (fonts, logos) are shared in `docs/assets/` instead of embedded. 
+Form-sorted table (rank, team with its last five results, form, change vs. previous matchday, season 
+power score, matches played, record, goals, goal difference, official table position with its distance 
+to the form rank), a full-width pitch laying the league out by form, beside the table the *Überraschung 
+des Spieltags* card, the *Belag* table (goals per match and Heimbonus per surface, all seasons pooled 
+because one is too thin) and the *Rückstand und Führung* card — then the next matchday's forecast and 
+the predictor table behind it, side by side in the same grid, and a source link.
+
+**Snapshots** (`docs/<season>/spieltag-NN/index.html`, current season only): one page per matchday, 
+showing the state *after* that matchday was played. All data (form, power score, forecast, simulation) 
+reflects only the matches before the first fixture of matchday N+1. Snapshots include a navigation bar 
+in the masthead (numbers 1..26, with links to past matchdays) and a banner below the header explaining 
+the historical view. No "Stand der Berechnung" timestamp on snapshots.
 
 Archive pages (`docs/<season>/index.html` for finished seasons) carry the dashboard only — pitch,
 form table, and in place of the surprise card the inline-SVG form chart (one line per team over the
@@ -276,7 +284,7 @@ to the team that needed fewer matches; both from `events.csv`, so they are count
 Below their floors the badges simply do not render. They are drawn in an amber that no data uses,
 because green and wine mean above and below average everywhere else on the page.
 
-Two consequences that must not be undone by accident:
+Four consequences that must not be undone by accident:
 
 - **The form rating gets no shrinkage** (`to_power()`, not `normalize_to_power_score()`). With
   `N0 = 20` a five-match window keeps 5/25 of its deviation and the whole league collapses back
@@ -287,7 +295,11 @@ Two consequences that must not be undone by accident:
   keeps every match in the estimate forever, so the effective memory stalls around nine matchdays
   and the values leave the 0–100 scale before it gets shorter. Restarting from 1500 at each
   matchday drops them outright, which is the only thing that produces a five-match view.
-
+- **Snapshots cut at match dates, not matchday numbers.** A snapshot for matchday N includes all 
+  matches played before the first fixture of matchday N+1. A postponed match appears in the snapshot 
+  of the week it was played, not of its original matchday — data cuts are reproducible, unlike 
+  "played by now" which changes as time passes. All snapshots rebuild together from `matches.csv`; 
+  uncommitted edits to any snapshot are lost.
 - **The chart's y-axis follows the data but is snapped to a 5-point grid and never narrower than 15
   points.** Without that floor an early season, where the league sits inside three points, would be
   blown up to full height and fake movement that isn't there.
@@ -335,11 +347,21 @@ Four things that must not be undone by accident:
 
 ## Publishing
 
-GitHub Pages from `main` + `/docs`. No workflow: the committed `docs/index.html` *is* the deployment.
+GitHub Pages from `main` + `/docs`. The committed pages *are* the deployment: no workflow needed.
+
+**Page hierarchy:**
+- `docs/index.html` — current season's live page (all played matches, scheduled fixtures, forecast)
+- `docs/<season>/index.html` — archive pages (finished seasons, no forecast or simulation)
+- `docs/<season>/spieltag-NN/index.html` — historical snapshots (2026/27 only, one per matchday)
+- `docs/assets/fonts/` and `docs/assets/logos/` — shared, not embedded
+
+Every snapshot is a pure function of `matches.csv` cut at a matchday boundary: played matches before
+the first fixture of matchday N+1. All snapshots rebuild together; uncommitted edits are lost on
+`python run.py`.
 
 Pages is free only on **public** repos, which decides what may be committed. `.gitignore` excludes
 `data/` (scraped match rows) and `tests/fixtures/` (verbatim fussball.de pages and their font
-files) — the repo carries code and the derived page, nothing sourced from fussball.de. Two
+files) — the repo carries code and the derived pages, nothing sourced from fussball.de. Two
 consequences: **`data/matches.csv` exists only on the local machine and is not backed up by the
 repo**, and `tests/test_parse.py` cannot run from a fresh clone.
 
