@@ -469,7 +469,6 @@
   .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
 
   /* ---- Season simulation -------------------------------------------------- */
-  .sim { max-width:1080px; margin:34px auto 0; }
   .sim table { width:100%; }
   .sim th { text-align:center; }
   .sim th.l { text-align:left; }
@@ -573,7 +572,6 @@
   <div class="tabs" role="tablist">
     <button role="tab" id="t-form" aria-controls="v-form" aria-selected="true" data-view="form">Form</button>
     <button role="tab" id="t-team" aria-controls="v-team" aria-selected="false" data-view="team">Team im Detail</button>
-    <button role="tab" id="t-prognose" aria-controls="v-prognose" aria-selected="false" data-view="prognose">Prognose</button>
     <button role="tab" id="t-methodik" aria-controls="v-methodik" aria-selected="false" data-view="methodik">Erklärungen</button>
   </div>
   <div class="view" id="v-form" role="tabpanel" aria-labelledby="t-form">
@@ -1476,34 +1474,6 @@
   </section>
 
   </div>
-  <div class="view" id="v-prognose" role="tabpanel" aria-labelledby="t-prognose" hidden>
-<div class="fdash solo"><section class="fcast">
-    <h2>Was besser sein müsste – und es nicht ist</h2>
-    <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
-    umgerechnet und an der Saison 2025/26 nachgerechnet.</p>
-    <div class="card">
-      <table>
-        <thead>
-          <tr><th class="l">Ansatz</th><th>Fehler</th><th>Vorsprung auf die Liga-Quote</th></tr>
-        </thead>
-        <tbody>
-          <tr class=""><td class="l">Form der letzten 5 Spieltage</td><td>0,2157</td><td class="ld">5,2 <span class="pm">± 5,2</span></td></tr>
-          <tr class=""><td class="l">Erwartete Tore (Prognose)</td><td>0,2164</td><td class="ld">4,5 <span class="pm">± 4,4</span></td></tr>
-          <tr class=""><td class="l">Saison-Rating (Elo)</td><td>0,2170</td><td class="ld">3,9 <span class="pm">± 4,8</span></td></tr>
-          <tr class=""><td class="l">Tabellenplatz</td><td>0,2178</td><td class="ld">3,1 <span class="pm">± 3,9</span></td></tr>
-          <tr class=""><td class="l">Punkte pro Spiel</td><td>0,2185</td><td class="ld">2,4 <span class="pm">± 2,3</span></td></tr>
-          <tr class=""><td class="l">Ruhetage vor dem Spiel</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,5</span></td></tr>
-          <tr class=""><td class="l">Heimstärke des Vereins</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,7</span></td></tr>
-          <tr class="base"><td class="l">Liga-Quote (kein Modell)</td><td>0,2209</td><td class="ld"><span class="flat">Referenz</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="hint">Kleinerer Fehler ist besser; <strong>Vorsprung</strong> ist der Abstand zur
-    simplen Auskunft „meistens gewinnt das Heimteam“. Kein Ansatz ist nachweisbar besser als
-    diese Auskunft – deshalb ist die Prognose ein Blickwinkel, kein Tipp.</p>
-  </section>
-</div>
-  </div>
   <div class="view" id="v-methodik" role="tabpanel" aria-labelledby="t-methodik" hidden>
 <section class="method" id="methodik">
     <h2>Erklärungen</h2>
@@ -1607,7 +1577,7 @@
     bei null.</p>
 
     <h3>Was besser sein müsste</h3>
-    <p>Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
+    <p>Die Tabelle dazu steht am Ende dieser Seite. Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
     Saison 2025/26 ab Spieltag 6 nachgerechnet.
     <strong>Fehler</strong> ist der mittlere Prognosefehler über alle Spiele, kleiner ist
     besser. <strong>Vorsprung</strong> ist der Abstand zur Liga-Quote in Tausendsteln, mit dem
@@ -1622,7 +1592,32 @@
     Platz und Zuschauer. Wer ein Spiel dominiert hat, wer verletzt fehlt, wie der Platz oder das
     Wetter war – dafür gibt es keine Daten, und diese Seite baut dafür auch keine Ersatzwerte.</p>
   </section>
-
+<div class="fdash solo"><section class="fcast">
+    <h2>Was besser sein müsste – und es nicht ist</h2>
+    <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
+    umgerechnet und an der Saison 2025/26 nachgerechnet.</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th class="l">Ansatz</th><th>Fehler</th><th>Vorsprung auf die Liga-Quote</th></tr>
+        </thead>
+        <tbody>
+          <tr class=""><td class="l">Form der letzten 5 Spieltage</td><td>0,2157</td><td class="ld">5,2 <span class="pm">± 5,2</span></td></tr>
+          <tr class=""><td class="l">Erwartete Tore (Prognose)</td><td>0,2164</td><td class="ld">4,5 <span class="pm">± 4,4</span></td></tr>
+          <tr class=""><td class="l">Saison-Rating (Elo)</td><td>0,2170</td><td class="ld">3,9 <span class="pm">± 4,8</span></td></tr>
+          <tr class=""><td class="l">Tabellenplatz</td><td>0,2178</td><td class="ld">3,1 <span class="pm">± 3,9</span></td></tr>
+          <tr class=""><td class="l">Punkte pro Spiel</td><td>0,2185</td><td class="ld">2,4 <span class="pm">± 2,3</span></td></tr>
+          <tr class=""><td class="l">Ruhetage vor dem Spiel</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,5</span></td></tr>
+          <tr class=""><td class="l">Heimstärke des Vereins</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,7</span></td></tr>
+          <tr class="base"><td class="l">Liga-Quote (kein Modell)</td><td>0,2209</td><td class="ld"><span class="flat">Referenz</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Kleinerer Fehler ist besser; <strong>Vorsprung</strong> ist der Abstand zur
+    simplen Auskunft „meistens gewinnt das Heimteam“. Kein Ansatz ist nachweisbar besser als
+    diese Auskunft – deshalb ist die Prognose ein Blickwinkel, kein Tipp.</p>
+  </section>
+</div>
   </div>
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle

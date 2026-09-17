@@ -1346,7 +1346,7 @@ def method_section(has_future):
     bei null.</p>
 
     <h3>Was besser sein müsste</h3>
-    <p>Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
+    <p>Die Tabelle dazu steht am Ende dieser Seite. Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
     Saison {SEASON_PREVIOUS} ab Spieltag {SKIP_MATCHDAYS + 1} nachgerechnet.
     <strong>Fehler</strong> ist der mittlere Prognosefehler über alle Spiele, kleiner ist
     besser. <strong>Vorsprung</strong> ist der Abstand zur Liga-Quote in Tausendsteln, mit dem
@@ -1438,32 +1438,24 @@ def render(season, rows, matchday_n=None):
     else:
         team_panels_html = ""
 
-    # Forecast and the measurement of what it is worth belong side by side - the
-    # page is not allowed to publish one without the other, and set as two
-    # columns of the same row that pairing is shown rather than only asserted.
-    # A finished season has no fixtures left, and then the comparison stands on
-    # its own at the page's normal measure.
+    # Forecast and season outlook side by side; both share the same gate
+    # (MIN_MATCHES), so one never renders without the other. The measurement
+    # of what the forecast is worth ships on every page, under the
+    # explanations - the page is not allowed to publish a forecast without it.
     fcast = forecast_section(season, played, logos, {t["team"]: t["form"] for t in table}, scheduled)
-    predictors = predictor_section()
+    predictors = f'<div class="fdash solo">{predictor_section()}</div>'
     sim_section = simulation_section(season, played, logos, scheduled)
-    if fcast:
-        outlook = (f'<div class="dash fdash"><div class="col">{fcast}</div>'
-                   f'<div class="col">{predictors}</div></div>')
-    else:
-        outlook = f'<div class="fdash solo">{predictors}</div>'
-    if sim_section:
-        outlook += sim_section
+    outlook = (f'<div class="dash fdash"><div class="col">{fcast}</div>'
+               f'<div class="col">{sim_section}</div></div>')
 
     # One tab per question, and the explanations last. An archive page has no
-    # team panels and nothing to forecast, so the predictor comparison joins
-    # the explanations there instead of having a tab of its own.
+    # team panels and nothing to forecast, so it has no forecast tab.
     views = [("form", "Form", None)]
     if team_panels_html:
         views.append(("team", "Team im Detail", team_panels_html))
+    if fcast:
         views.append(("prognose", "Prognose", outlook))
-        views.append(("methodik", "Erklärungen", method_section(has_future)))
-    else:
-        views.append(("methodik", "Erklärungen", method_section(has_future) + outlook))
+    views.append(("methodik", "Erklärungen", method_section(has_future) + predictors))
     tabs_html = "  <div class=\"tabs\" role=\"tablist\">\n" + "".join(
         f'    <button role="tab" id="t-{vid}" aria-controls="v-{vid}" '
         f'aria-selected="{"true" if vid == "form" else "false"}" data-view="{vid}">{label}</button>\n'
@@ -2023,7 +2015,6 @@ def render(season, rows, matchday_n=None):
   .tdet .badge {{ position:relative; left:auto; right:auto; transform:none; }}
 
   /* ---- Season simulation -------------------------------------------------- */
-  .sim {{ max-width:1080px; margin:34px auto 0; }}
   .sim table {{ width:100%; }}
   .sim th {{ text-align:center; }}
   .sim th.l {{ text-align:left; }}
