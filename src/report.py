@@ -15,6 +15,7 @@ from config import (
     FONT_DIR,
     FORM_WINDOW,
     LOGO_DIR,
+    MATCHES_CSV,
     POWER_SCALE_DIVISOR,
     R0,
     SEASON_CURRENT,
@@ -38,6 +39,41 @@ from score import clamp, normalize_to_power_score
 OUT_HTML = os.path.join(os.path.dirname(__file__), "..", "docs", "index.html")
 
 SOURCE_URL = "https://www.fussball.de"
+
+
+def snapshot(rows_all, matchday_n=None):
+    """(played, scheduled, matchday) for rendering.
+
+    For the current state (no matchday specified): use all played matches,
+    load scheduled fixtures as-is.
+
+    For a historical snapshot (matchday_n given): cut at the date of the
+    first fixture with matchday > N. Played = matches before that date.
+    Scheduled = remaining fixtures (with goals stripped, status="scheduled").
+    Returns (played, scheduled, matchday_n).
+    """
+    if matchday_n is None:
+        # Current state: all played matches, no future cutoff
+        played = [r for r in rows_all if r["status"] == "played"]
+        return played, None, max(int(r["matchday"]) for r in played) if played else 0
+
+    # Historical snapshot: cut at the date of the first match of matchday N+1
+    matchday_next = matchday_n + 1
+    cut_dates = [r["date"] for r in rows_all if int(r["matchday"]) == matchday_next]
+    if not cut_dates:
+        # No such matchday exists; return all played matches, no future
+        played = [r for r in rows_all if r["status"] == "played"]
+        return played, [], matchday_n
+
+    cut = min(cut_dates)
+    played = [r for r in rows_all if r["status"] == "played" and r["date"] < cut]
+    # Remaining matches (played after cut, or originally scheduled)
+    remaining = [r for r in rows_all if r["date"] >= cut or r["status"] == "scheduled"]
+    # Strip goals and mark as scheduled for snapshot
+    scheduled = [{**r, "home_goals": "0", "away_goals": "0", "status": "scheduled"}
+                 for r in remaining]
+
+    return played, scheduled, matchday_n
 
 
 def season_path(season):
@@ -90,33 +126,30 @@ def num(x, decimals=1):
     return f"{x:.{decimals}f}".replace(".", ",")
 
 
-def load_logos():
-    """Slug -> data URI, so the page stays self-contained. A team without a file
-    renders without a crest rather than breaking the row."""
+def load_logos(root=""):
+    """Slug -> image URL. With root="" uses relative URLs to shared assets/logos/ folder.
+    A team without a file renders without a crest rather than breaking the row."""
     if not os.path.isdir(LOGO_DIR):
         return {}
     logos = {}
     for name in sorted(os.listdir(LOGO_DIR)):
         if name.endswith(".png"):
-            with open(os.path.join(LOGO_DIR, name), "rb") as f:
-                encoded = base64.b64encode(f.read()).decode("ascii")
-            logos[name[:-4]] = f"data:image/png;base64,{encoded}"
+            logos[name[:-4]] = f"{root}assets/logos/{name}"
     return logos
 
 
-def font_face(family, filename, weights):
-    """One @font-face with the woff2 inlined, so the page makes no external
-    request. Both files are the variable Latin cut Google Fonts serves, which
+def font_face(family, filename, weights, root=""):
+    """One @font-face with the woff2 reference (not embedded).
+    Supports root paths for snapshot pages (e.g., root="../" or root="../../").
+    Both files are the variable Latin cut Google Fonts serves, which
     covers German umlauts, the en dash and the minus sign the page uses."""
     path = os.path.join(FONT_DIR, filename)
     if not os.path.isfile(path):
         return ""
-    with open(path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
     return (
         "@font-face{font-family:'%s';font-style:normal;font-weight:%s;"
-        "font-display:swap;src:url(data:font/woff2;base64,%s) format('woff2');}"
-        % (family, weights, encoded)
+        "font-display:swap;src:url(%sassets/fonts/%s) format('woff2');}"
+        % (family, weights, root, filename)
     )
 
 
@@ -587,6 +620,44 @@ def svg_chart(table, matchdays, key="series", prefix="line", highlight=()):
 
     parts.append("</svg>")
     return "\n".join(parts)
+
+
+def snapshot_banner(season, matchday_n):
+    """Info banner for historical snapshot pages."""
+    if season != SEASON_CURRENT or matchday_n is None:
+        return ""
+    return f"""<div class="banner snapshot">
+  <p>Stand nach Spieltag {matchday_n} – so sah die Seite damals aus.
+  <a href="../" class="current-link">→ Aktueller Stand</a></p>
+</div>"""
+
+
+def matchday_nav(season, current_matchday, max_matchday):
+    """HTML for matchday selector in the masthead. Links to snapshot pages."""
+    if season != SEASON_CURRENT or current_matchday is None:
+        return ""
+
+    links = []
+    for md in range(1, max_matchday + 1):
+        if md < current_matchday:
+            # Past matchday: link to snapshot
+            links.append(f'<a href="2026-27/spieltag-{md:02d}/">{md}</a>')
+        elif md == current_matchday:
+            # Current page
+            links.append(f'<span aria-current="page">{md}</span>')
+        else:
+            # Future matchday: grey out
+            links.append(f'<span class="future">{md}</span>')
+
+    # Navigation buttons
+    nav_prev = ""
+    nav_next = ""
+    if current_matchday > 1:
+        nav_prev = f'<a href="2026-27/spieltag-{current_matchday-1:02d}/" class="nav-prev">‹</a>'
+    if current_matchday < max_matchday:
+        nav_next = f'<a href="2026-27/spieltag-{current_matchday+1:02d}/" class="nav-next">›</a>'
+
+    return f'<nav class="matchdays">{nav_prev}{"".join(links)}{nav_next}</nav>'
 
 
 def season_switcher(current_season):
@@ -1286,13 +1357,41 @@ def method_section(has_future):
 """
 
 
-def render(season, rows):
-    scheduled = load(season, "scheduled")
+def render(season, rows, matchday_n=None):
+    """Render the page for a given matchday or current state.
+
+    Args:
+        season: season id (2026/27 etc)
+        rows: all rows from matches.csv (played + scheduled)
+        matchday_n: if given, render as a historical snapshot of that matchday;
+                    if None, render current state (all played, load scheduled from CSV)
+    """
+    played, scheduled, matchday = snapshot(rows, matchday_n)
+
+    if scheduled is None:
+        # Current state: load scheduled fixtures
+        scheduled = load(season, "scheduled")
+
     has_future = bool(scheduled)
 
-    table, matchdays = build_table(rows, scheduled)
-    matchday = matchdays[-1]
-    last_date = max(r["date"] for r in rows)
+    # Calculate asset root path based on where this page will be written.
+    # Current season (index.html or spieltag-NN/): depends on matchday_n
+    # Archive (2025-26/index.html): one level deep
+    if season != SEASON_CURRENT:
+        # Archive season: docs/<season-slug>/index.html
+        root = "../"
+    elif matchday_n is not None:
+        # Snapshot: docs/2026-27/spieltag-NN/index.html
+        root = "../../"
+    else:
+        # Current page: docs/index.html
+        root = ""
+
+    table, matchdays = build_table(played, scheduled)
+    if matchday_n is None:
+        matchday = matchdays[-1] if matchdays else 0
+    # else: use matchday from snapshot() - already set
+    last_date = max(r["date"] for r in played) if played else None
     last_date = ".".join(reversed(last_date.split("-")))
     generated = date.today().strftime("%d.%m.%Y")
 
@@ -1316,14 +1415,14 @@ def render(season, rows):
     best_delta, best_rank = max(jumps, default=(0, None))
     jump_rank = best_rank if best_delta >= 1.5 and best_rank != hot_rank else None
 
-    logos = load_logos()
+    logos = load_logos(root)
     pitch_svg, pitch_lo, pitch_hi = svg_pitch(table, logos)
 
     # Team detail panels: only render for current season
     # and generate HTML for each team's detail section
     if season == SEASON_CURRENT:
-        match_probs = match_probabilities(rows, season)
-        team_panels_html = team_details_html(table, rows, logos, season, matchdays, match_probs)
+        match_probs = match_probabilities(played, season)
+        team_panels_html = team_details_html(table, played, logos, season, matchdays, match_probs)
     else:
         team_panels_html = ""
 
@@ -1332,9 +1431,9 @@ def render(season, rows):
     # columns of the same row that pairing is shown rather than only asserted.
     # A finished season has no fixtures left, and then the comparison stands on
     # its own at the page's normal measure.
-    fcast = forecast_section(season, rows, logos, {t["team"]: t["form"] for t in table}, scheduled)
+    fcast = forecast_section(season, played, logos, {t["team"]: t["form"] for t in table}, scheduled)
     predictors = predictor_section()
-    sim_section = simulation_section(season, rows, logos, scheduled)
+    sim_section = simulation_section(season, played, logos, scheduled)
     if fcast:
         outlook = (f'<div class="dash fdash"><div class="col">{fcast}</div>'
                    f'<div class="col">{predictors}</div></div>')
@@ -1423,10 +1522,10 @@ def render(season, rows):
         side_section = f"""<h2>Überraschung des Spieltags</h2>
         <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
         Unentschieden zählen nicht.</p>
-        {surprise_card(rows, table, matchday, logos)}"""
+        {surprise_card(played, table, matchday, logos)}"""
         # Two more cards from the match detail pages, both absent on a clone
         # without data/details.csv rather than rendered empty.
-        surface, marks, first = page_data(season)
+        surface, marks, first = page_data(played, season)
         side_section += f"""
         {surface_section(surface)}
         {comeback_section(marks, first, logos)}"""
@@ -1448,9 +1547,9 @@ def render(season, rows):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Power Ranking – {html.escape(STAFFEL_NAME)} {season}</title>
 <style>
-  {font_face("Archivo Narrow", "archivo-narrow.woff2", "400 700")}
-  {font_face("Source Sans 3", "source-sans-3.woff2", "300 700")}
-  {font_face("Caveat", "caveat.woff2", "500 700")}
+  {font_face("Archivo Narrow", "archivo-narrow.woff2", "400 700", root)}
+  {font_face("Source Sans 3", "source-sans-3.woff2", "300 700", root)}
+  {font_face("Caveat", "caveat.woff2", "500 700", root)}
   :root {{
     /* Two faces, far apart on purpose. The narrow print grotesque carries every
        figure, heading and table head - this is a page about one number per team,
@@ -1539,6 +1638,23 @@ def render(season, rows):
              font-size:14.5px; }}
   .seasons span {{ color:var(--ink); font-weight:600; }}
   .seasons a {{ color:inherit; }}
+
+  /* Matchday navigation: numbers 1..N with links to snapshots, past matches are clickable */
+  .matchdays {{ display:flex; gap:8px; align-items:center; padding:8px 0;
+               font-size:13px; }}
+  .matchdays a {{ color:var(--ink); text-decoration:none; padding:2px 6px;
+                 border:1px solid var(--line); border-radius:3px; }}
+  .matchdays a:hover {{ background-color:var(--card); }}
+  .matchdays span[aria-current] {{ font-weight:600; color:var(--down); }}
+  .matchdays span.future {{ color:var(--muted); }}
+  .matchdays .nav-prev, .matchdays .nav-next {{ padding:2px 4px; }}
+
+  /* Banner for snapshot pages showing which matchday this is. */
+  .banner.snapshot {{ background-color:var(--mark-bg); padding:12px; margin:0;
+                      border-bottom:2px solid var(--mark-line); }}
+  .banner.snapshot p {{ margin:0; font-size:14px; color:var(--mark); }}
+  .banner.snapshot .current-link {{ color:var(--down); text-decoration:none; }}
+  .banner.snapshot .current-link:hover {{ text-decoration:underline; }}
 
   /* Three facts of equal weight in one row: the two ends of the form table and
      the team the table is most wrong about. Same size, same build, so none of
@@ -1966,6 +2082,7 @@ def render(season, rows):
 </style>
 </head>
 <body>
+{snapshot_banner(season, matchday_n)}
 <header class="mast">
   <div class="wrap">
     <div class="mhead">
@@ -1978,6 +2095,7 @@ def render(season, rows):
       Nach <b>Spieltag {matchday}</b>, {last_date}</p>
     </div>
     {season_switcher(season)}
+    {matchday_nav(season, matchday if matchday_n is None else matchday_n, matchdays[-1] if matchdays else 0)}
     <div class="facts">
       <p class="fact"><span class="k">Beste Form</span>
       <span class="t">{html.escape(top_team["team"])}</span>
@@ -2046,7 +2164,7 @@ def render(season, rows):
 {other_views}  <footer>
     <p>Datenquelle: <a href="{SOURCE_URL}">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
-    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: {generated}</p>
+    Privates, nicht-kommerzielles Projekt.{f" Stand der Berechnung: {generated}" if matchday_n is None else ""}</p>
   </footer>
 </main>
 <script>
@@ -2131,10 +2249,43 @@ def check_css(html):
         raise ValueError("unclosed CSS comment")
 
 
-def write_report(season, rows, path=None):
+def copy_assets():
+    """Copy font and logo files to docs/assets/ so pages can reference them."""
+    import shutil
+    docs_dir = os.path.join(os.path.dirname(__file__), "..", "docs")
+    assets_dir = os.path.join(docs_dir, "assets")
+
+    for subdir in ("fonts", "logos"):
+        src = os.path.join(os.path.dirname(__file__), "..", "assets", subdir)
+        dst = os.path.join(assets_dir, subdir)
+        if os.path.isdir(src):
+            os.makedirs(dst, exist_ok=True)
+            for name in os.listdir(src):
+                src_file = os.path.join(src, name)
+                if os.path.isfile(src_file):
+                    dst_file = os.path.join(dst, name)
+                    shutil.copy2(src_file, dst_file)
+
+
+def write_report(season, rows, path=None, matchday_n=None):
+    """Write one season page.
+
+    Args:
+        season: season id
+        rows: all rows from matches.csv
+        path: override output path (if None, use season_path)
+        matchday_n: if given, write a snapshot page for that matchday
+    """
     if path is None:
-        path = season_path(season)
-    html_out = render(season, rows)
+        if matchday_n is not None:
+            # Snapshot path: docs/2026-27/spieltag-05/index.html
+            season_slug = season.replace("/", "-")
+            docs_dir = os.path.join(os.path.dirname(__file__), "..", "docs", season_slug)
+            path = os.path.join(docs_dir, f"spieltag-{matchday_n:02d}", "index.html")
+        else:
+            path = season_path(season)
+
+    html_out = render(season, rows, matchday_n)
     check_css(html_out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
@@ -2142,10 +2293,40 @@ def write_report(season, rows, path=None):
     return path
 
 
+def write_season(season, rows):
+    """Write all pages for a season: current state + snapshots for each matchday.
+
+    Also copies font and logo files to docs/assets/.
+    """
+    copy_assets()
+
+    # Write current state (index.html or archive)
+    current_path = write_report(season, rows)
+
+    # Write snapshots for each matchday (current season only)
+    if season == SEASON_CURRENT:
+        played = [r for r in rows if r["status"] == "played"]
+        if played:
+            max_matchday = max(int(r["matchday"]) for r in played)
+            for matchday_n in range(1, max_matchday + 1):
+                write_report(season, rows, matchday_n=matchday_n)
+
+    return current_path
+
+
 if __name__ == "__main__":
     import argparse
+    import csv
 
-    parser = argparse.ArgumentParser(description="Rebuild docs/index.html from matches.csv")
+    parser = argparse.ArgumentParser(description="Rebuild docs/ pages from matches.csv")
     parser.add_argument("--season", default=SEASON_CURRENT)
+    parser.add_argument("--matchday", type=int, help="Rebuild only one matchday snapshot")
     args = parser.parse_args()
-    print(write_report(args.season, load(args.season)))
+
+    with open(MATCHES_CSV, encoding="utf-8", newline="") as f:
+        rows = [r for r in csv.DictReader(f) if r["season"] == args.season]
+
+    if args.matchday:
+        print(write_report(args.season, rows, matchday_n=args.matchday))
+    else:
+        print(write_season(args.season, rows))

@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power Ranking – Kreisliga A Hunsrück-Mosel 2026/27</title>
+<style>
+  @font-face{font-family:'Archivo Narrow';font-style:normal;font-weight:400 700;font-display:swap;src:url(../../assets/fonts/archivo-narrow.woff2) format('woff2');}
+  @font-face{font-family:'Source Sans 3';font-style:normal;font-weight:300 700;font-display:swap;src:url(../../assets/fonts/source-sans-3.woff2) format('woff2');}
+  @font-face{font-family:'Caveat';font-style:normal;font-weight:500 700;font-display:swap;src:url(../../assets/fonts/caveat.woff2) format('woff2');}
+  :root {
+    /* Two faces, far apart on purpose. The narrow print grotesque carries every
+       figure, heading and table head - this is a page about one number per team,
+       so the numbers get the voice. The humanist sans carries club names and the
+       long plain-language passages, where width and openness matter more. */
+    --display:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
+    --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+    /* Only the two editorial markers use this - the bits of the sheet a person
+       wrote rather than the model computed. Subset to letters and a space, so
+       a badge label with a digit in it would fall back to the display face. */
+    --hand:"Caveat","Segoe Script",cursive;
+
+    /* Uncoated stock and printing ink: this is a notice pinned up after the
+       weekend, not a broadcast graphic. */
+    --paper:#e7e4dd; --card:#fcfbf8; --ink:#23201b; --muted:#6b6459;
+    --line:#d8d3c8; --track:#dcd7cc;
+    /* Above and below the 50-point league average. These two mean the same
+       thing everywhere on the page and are the one thing that must not drift. */
+    --up:#16764f; --down:#96263f; --draw:#a9a294;
+    /* The pitch is the only dark surface on the page, and it is grass rather
+       than a dark UI panel - so both meanings need a lifted variant on it. */
+    --turf:#1f3129; --chalk:rgba(255,255,255,.26); --on-turf:#a7bdaf;
+    --up-l:#63d9a6; --down-l:#f2808f;
+    /* Editorial markers only, in a colour no measurement uses: amber ink for
+       the written notes, a highlighter yellow for the rows they point at. */
+    --mark:#7a4a09; --mark-bg:#f6e2bc; --mark-line:#e6cb96;
+  }
+  * { box-sizing:border-box; }
+  /* The stock itself, then what has happened to it. Top three layers are four
+     coffee marks in fixed places, so the sheet looks the same from one matchday
+     to the next; under them the sparse dark flecks of recycled paper and a fine
+     fibre grain, both drawn by the browser rather than shipped as images. All
+     of it sits on the ground only - every card and the pitch are opaque. */
+  body { margin:0; background-color:var(--paper); color:var(--ink);
+         font:16.5px/1.62 var(--body); -webkit-font-smoothing:antialiased;
+         background-repeat:no-repeat, no-repeat, no-repeat, no-repeat,
+                           repeat, repeat;
+         background-size:186px 168px, 118px 112px, 148px 132px, 96px 92px,
+                         240px 240px, 190px 190px;
+         background-position:5% 2.4%, 93% 5%, 86% 71%, 11% 92%, 0 0, 0 0;
+         background-image:
+           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,0) 0 43%,
+             rgba(122,84,40,.075) 45% 49%, rgba(122,84,40,.03) 50.5% 54%,
+             rgba(122,84,40,0) 56%),
+           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,0) 0 45%,
+             rgba(122,84,40,.06) 47% 51%, rgba(122,84,40,0) 53%),
+           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,.032) 0 34%,
+             rgba(122,84,40,.05) 44% 48%, rgba(122,84,40,0) 51%),
+           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,.045) 0 30%,
+             rgba(122,84,40,0) 64%),
+           url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='7' intercept='-4.85'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)' opacity='0.5'/%3E%3C/svg%3E"),
+           url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55 1.3' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='190' height='190' filter='url(%23p)' opacity='0.115'/%3E%3C/svg%3E"); }
+  .wrap { max-width:1760px; margin:0 auto; padding:0 clamp(16px,2.4vw,36px); }
+  .prose { max-width:66ch; }
+  p { margin:0 0 12px; }
+  strong, b { font-weight:600; }
+  a { color:inherit; text-underline-offset:2px; }
+  a:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+  .line polyline { transition:stroke .12s ease, stroke-width .12s ease; }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+  /* ---- The token: one numbered disc in plain ink, coloured only at the ends
+     of the form table - the top three and the bottom three. Zones of this
+     table, not the side of the average the rest of the page colours by. */
+  .tok { display:inline-flex; align-items:center; justify-content:center;
+          width:27px; height:27px; border-radius:50%; flex:0 0 auto;
+          font:700 14px var(--display); color:var(--paper); background:var(--ink);
+          font-variant-numeric:tabular-nums; }
+  .tok.top { background:var(--up); }
+  .tok.bottom { background:var(--down); }
+
+  /* ---- Masthead ----------------------------------------------------------- */
+  /* No dark hero band: the sheet starts on paper and the heavy rule under the
+     wordmark is what says "this is the head of the notice". */
+  .mast { padding:22px 0 0; }
+  .mhead { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px 32px;
+            justify-content:space-between; padding-bottom:10px;
+            border-bottom:3px solid var(--ink); }
+  h1 { margin:0; font:700 clamp(30px,3.9vw,50px)/1 var(--display); }
+  .tag { margin:7px 0 0; color:var(--muted); font-size:15px; max-width:74ch; }
+  .where { margin:0; color:var(--muted); font-size:14.5px; line-height:1.4;
+            text-align:right; }
+  .where b { color:var(--ink); font-weight:600;
+              font-variant-numeric:tabular-nums; }
+  .seasons { display:flex; gap:14px; flex-wrap:wrap; padding:10px 0;
+             font-size:14.5px; }
+  .seasons span { color:var(--ink); font-weight:600; }
+  .seasons a { color:inherit; }
+
+  /* Three facts of equal weight in one row: the two ends of the form table and
+     the team the table is most wrong about. Same size, same build, so none of
+     them reads as a title over the others. */
+  .facts { display:flex; flex-wrap:wrap; gap:14px 48px; padding:20px 0 22px; }
+  /* Label on the first line, name and value side by side on the second. */
+  .fact { display:grid; grid-template-columns:auto auto; justify-content:start;
+           align-items:baseline; column-gap:9px; row-gap:3px; margin:0; }
+  .fact .k { grid-column:1 / -1; color:var(--muted); font-size:14.5px; }
+  .fact .t { font-weight:600; font-size:17px; }
+  .fact .t.none { font-weight:400; color:var(--muted); }
+  .fact .n { font:700 21px var(--display); font-variant-numeric:tabular-nums; }
+  .fact .n.pos { color:var(--up); } .fact .n.neg { color:var(--down); }
+  .fact .chip { margin-left:0; font-size:14px; padding:2px 8px; }
+
+  /* ---- Body -------------------------------------------------------------- */
+  main { padding:0 0 60px; }
+  h2 { font:600 22px/1.15 var(--display); margin:28px 0 8px; padding-top:9px;
+        border-top:2.5px solid var(--ink); }
+  section > h2:first-child { margin-top:0; }
+  .sub { color:var(--muted); font-size:14.5px; margin:-1px 0 13px; max-width:66ch; }
+
+  /* The pitch runs across the full page width - it is the one view that shows
+     the whole league at once, and the tokens need the room. */
+  .pitchsec { margin:0 0 6px; }
+
+  /* The dashboard below it: table on the left, the side cards on the right. */
+  .dash { display:grid; grid-template-columns:1fr; gap:26px; align-items:start; }
+  .col section + section { margin-top:22px; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:3px;
+           padding:0; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse;
+           font:15.5px var(--display); font-variant-numeric:tabular-nums; }
+  th, td { padding:9px 8px; text-align:right; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child { padding-left:14px; }
+  th:last-child, td:last-child { padding-right:14px; }
+  tbody tr:last-child td { border-bottom:0; }
+  /* A ruled head rather than a dark bar: the whole page is a printed sheet, and
+     the double rule is how a sheet separates the head from the entries. */
+  thead th { font:600 13.5px var(--display); color:var(--ink); white-space:nowrap;
+              border-bottom:2px solid var(--ink); padding-top:11px;
+              padding-bottom:7px; }
+  th.l, td.team, td.power { text-align:left; }
+  td.rank { width:46px; }
+  td.team { line-height:1.3; min-width:232px; }
+  .tc { display:flex; align-items:center; gap:10px; }
+  .lg { width:28px; height:28px; object-fit:contain; flex:0 0 auto; }
+  /* A club name that wraps makes its row taller than every other one, which is
+     exactly the ragged scan the form table exists to avoid. It keeps one line
+     and widens its column instead; the card already scrolls if that is too
+     much. The phone rule below hands wrapping back, where width is the scarce
+     thing rather than rhythm. */
+  .tn { display:block; font-family:var(--body); font-weight:600; font-size:15.5px;
+         white-space:nowrap; }
+  /* nowrap so an annotation too long for the cell runs out of it rather than
+     dropping onto a line of its own; the phone rule below puts wrapping back. */
+  .form { display:flex; align-items:center; flex-wrap:nowrap; gap:4px 8px; margin-top:2px; }
+  /* The one bold thing on the page: the form figure, set large in the narrow
+     face. Everything around it stays quiet. */
+  .pw b { font:700 23px var(--display); }
+
+  .seg { display:flex; gap:4px; flex:0 0 auto; align-items:center; }
+  .seg i { width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .seg i.w { background:var(--up); }
+  .seg i.d { background:var(--draw); }
+  .seg i.l { background:var(--down); }
+  .rt { color:var(--muted); font-size:13px; }
+  .rs { display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
+
+  /* The row an editorial marker points at, gone over with a highlighter. Two
+     strokes, neither of them the width of the row - a marker starts and stops
+     where the hand stops, and the second pass never lands on the first.
+     Background images rather than positioned pseudo-elements: `position:
+     relative` on a <tr> throws off column widths under `border-collapse:
+     collapse`, which squeezed the marked row's cells to a fraction of the
+     others. The wobble is in the SVG outline, the uneven pressure in its
+     gradient, and a background paints under the cell content for free. */
+  tr.marked { background-repeat:no-repeat, no-repeat;
+            background-size:63% 64%, 46% 42%;
+            background-position:2% 56%, 10% 88%;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23face3a' stop-opacity='.07'/%3E%3Cstop offset='.05' stop-color='%23face3a' stop-opacity='.44'/%3E%3Cstop offset='.34' stop-color='%23face3a' stop-opacity='.25'/%3E%3Cstop offset='.61' stop-color='%23face3a' stop-opacity='.42'/%3E%3Cstop offset='.87' stop-color='%23face3a' stop-opacity='.22'/%3E%3Cstop offset='1' stop-color='%23face3a' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M1,9 C26,2 58,13 92,6 C128,0 163,10 199,3 L198,31 C170,38 132,27 96,34 C62,40 27,30 2,37 Z' fill='url(%23g)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23face3a' stop-opacity='.07'/%3E%3Cstop offset='.05' stop-color='%23face3a' stop-opacity='.44'/%3E%3Cstop offset='.34' stop-color='%23face3a' stop-opacity='.25'/%3E%3Cstop offset='.61' stop-color='%23face3a' stop-opacity='.42'/%3E%3Cstop offset='.87' stop-color='%23face3a' stop-opacity='.22'/%3E%3Cstop offset='1' stop-color='%23face3a' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M2,13 C34,5 66,17 100,10 C134,3 168,13 198,5 L197,29 C166,36 130,25 98,32 C64,38 30,28 3,36 Z' fill='url(%23g)'/%3E%3C/svg%3E"); }
+
+  .up { color:var(--up); } .down { color:var(--down); } .flat { color:var(--muted); }
+  td.tab { white-space:nowrap; }
+  /* Square: a chip is a measured difference. Badges below are stamps and stay
+     rounded, so the two never read as the same kind of thing. */
+  .chip { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:2px;
+           font:600 12.5px var(--display); }
+  .chip.up { background:#d6e8de; color:#0e5c3d; }
+  .chip.down { background:#f2dbe0; color:#7d1f34; }
+  .chip.flat { background:#e4e0d6; color:var(--muted); }
+
+  /* Editorial marker, deliberately in a colour no data uses: green and wine
+     mean above and below average everywhere else on the page, and a badge is
+     not a measurement. Set as a pen annotation for the same reason - a ring
+     drawn round a row by hand cannot be mistaken for something the model
+     computed. The lopsided radii are what make the ring look drawn; they scale
+     with the label instead of distorting the way a stretched drawing would.
+     Taken out of flow entirely and anchored to the cell rather than laid out
+     in it: an annotation written onto a sheet cannot push the print around, so
+     it must not change a row's height or a column's width. It is free to run
+     over the rule below it and across the cell next door. */
+  td.team, td.fx { position:relative; }
+  .badge { position:absolute; z-index:5; left:150px; bottom:-3px;
+            padding:2px 13px 3px; white-space:nowrap;
+            font:700 16px/1.2 var(--hand);
+            color:var(--mark); transform:rotate(-4.2deg); }
+  /* Two overlapping ovals, because that is how a ring round something on paper
+     actually comes out - one pass never closes. Percentage radii keep it an
+     oval at any label length instead of a rounded box. */
+  .badge::before, .badge::after { content:""; position:absolute; inset:0;
+            border:1.5px solid rgba(122,74,9,.5);
+            border-radius:47% 53% 44% 56%/62% 58% 42% 38%; }
+  .badge::after { border-radius:53% 47% 57% 43%/45% 40% 60% 55%;
+            transform:rotate(1.3deg) scale(1.035); opacity:.5; }
+  /* Drawn outside the ring and clear of the digits, so the note reaches the
+     column it is about without covering anything measured. */
+  .arw { position:absolute; left:100%; top:-3px; width:46px; height:21px;
+          margin-left:3px; overflow:visible; }
+  .arw path { fill:none; stroke:rgba(122,74,9,.62); stroke-width:1.9;
+               stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ---- Forecast and the predictor comparison ------------------------------ */
+  /* The two share one row of the same grid the dashboard uses: publishing a
+     forecast is only defensible next to the measurement of how little it is
+     worth, and side by side that is shown rather than only written down. */
+  .fdash { margin-top:34px; }
+  .fdash.solo { max-width:1080px; }
+  .fcast td.l { text-align:left; }
+  .fcast td.dt { color:var(--muted); font-size:13.5px; white-space:nowrap; }
+  .fcast td.p { width:64px; }
+  .fcast td.best { font-weight:700; }
+  .fcast td.xg, .fcast td.ld { color:var(--muted); white-space:nowrap; }
+  .fcast tr.base > td { border-top:2px solid var(--ink); }
+  .fcast td.l:first-child + td { font-family:var(--body); }
+  .fcast .pm { font-size:12.5px; }
+  /* The highlighter carries the marking here, so no tinted row underneath it,
+     and the strokes get their own lengths - two rows marked identically would
+     look stamped rather than written. */
+  .fcast tr.hl > td:first-child { box-shadow:inset 3px 0 0 var(--mark); }
+  .fcast tr.marked { background-size:56% 58%, 38% 34%;
+            background-position:3% 34%, 14% 78%; }
+  /* In the empty right half of the fixture cell, clear of both club names. */
+  .fx .badge { left:auto; right:5%; bottom:auto; top:50%;
+                transform:translateY(-50%) rotate(-4.8deg); }
+  .fxt { display:flex; align-items:center; gap:8px; line-height:1.3; }
+  .fxt span { font-weight:600; }
+  .fxt + .fxt { margin-top:3px; }
+  .lg.sm { width:21px; height:21px; }
+  /* Same three colours as the result dots, and the same meaning: seen from the
+     home side, win / draw / loss. */
+  .bar { display:flex; height:5px; max-width:280px; margin-top:7px;
+          overflow:hidden; background:var(--track); }
+  .bar i.w { background:var(--up); }
+  .bar i.d { background:var(--draw); }
+  .bar i.l { background:var(--down); }
+
+  /* ---- The pitch panel ---------------------------------------------------- */
+  /* Grass, with the mown bands the stripes on a real pitch make - the one place
+     on the page where a texture depicts the actual object. */
+  /* Four layers, front to back: a grain so the green is not a flat fill, a
+     vignette for the fall-off a real pitch has towards the touchlines, the fine
+     lines the mower leaves, and the wide mown bands across the pitch. */
+  .pitchcol { background-color:var(--turf); border-radius:3px; padding:11px 14px 10px;
+               background-repeat:repeat, no-repeat, repeat, repeat;
+               background-size:150px 150px, 100% 100%, 100% 100%, 100% 100%;
+               background-image:
+                 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23g)' opacity='0.13'/%3E%3C/svg%3E"),
+                 radial-gradient(130% 155% at 50% 50%, rgba(0,0,0,0) 36%,
+                   rgba(0,0,0,.32) 100%),
+                 repeating-linear-gradient(0deg, rgba(255,255,255,.017) 0 4px,
+                   rgba(255,255,255,0) 4px 9px),
+                 repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 58px,
+                   rgba(0,0,0,.07) 58px 116px); }
+  .pwrap { position:relative; }
+  .pwrap svg { width:100%; height:auto; display:block; }
+  .pg rect, .pg circle { fill:none; stroke:var(--chalk); stroke-width:1.6; }
+  .half { stroke:var(--chalk); stroke-width:1.6; }
+  .stick { stroke:rgba(255,255,255,.19); stroke-width:1.4; }
+  .axis { stroke:rgba(255,255,255,.15); stroke-width:1; stroke-dasharray:3 5; }
+  .ptok path { stroke:var(--turf); stroke-width:2.5; stroke-linejoin:round; }
+  .ptok path.pos { fill:var(--up-l); }
+  .ptok path.neg { fill:var(--down-l); }
+  /* The crest sits on a white chest patch, so the shirt colour still reads as
+     the above/below-average marker the legend explains. */
+  .ptok circle.in { fill:#fff; }
+  .ptok circle.rkb { fill:var(--turf); stroke:#fff; stroke-width:1.5; }
+  .ptok text { fill:var(--turf); font:700 23px var(--display); text-anchor:middle; }
+  .ptok text.rk { fill:#fff; font-size:12px; }
+  .pends { display:flex; justify-content:space-between; gap:12px; margin:0 0 5px; }
+  .pend { display:flex; align-items:center; gap:7px; margin:0;
+           color:var(--on-turf); font-size:12.5px; }
+  .pend i { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .pend i.pos { background:var(--up-l); } .pend i.neg { background:var(--down-l); }
+  .pend b { color:#fff; font:700 15px var(--display);
+             font-variant-numeric:tabular-nums; }
+  .phead { margin:9px 0 0; padding-top:8px; color:var(--on-turf); font-size:12.5px;
+            line-height:1.5; border-top:1px solid rgba(255,255,255,.12); }
+
+  /* ---- Chart -------------------------------------------------------------- */
+  .card.chart { padding:10px 12px; }
+  .chart svg { width:100%; height:auto; display:block; }
+  .zone.pos { fill:var(--up); opacity:.05; }
+  .zone.neg { fill:var(--down); opacity:.05; }
+  .grid { stroke:#e9e5da; stroke-width:1; }
+  .tick { fill:var(--muted); font:11.5px var(--display); }
+  .line polyline { fill:none; stroke:#d5cfc2; stroke-width:1.5; stroke-linejoin:round;
+                    stroke-linecap:round; }
+  .line circle { display:none; }
+  .line .end { display:none; }
+  .line.sel polyline { stroke:var(--c); stroke-width:2.8; }
+  .line.sel circle { display:inline; fill:var(--card); stroke:var(--c); stroke-width:2; }
+  .line.sel .end { display:inline; }
+  .end circle { display:inline; stroke:var(--card); stroke-width:2.5; }
+  .end circle.pos { fill:var(--up); }
+  .end circle.neg { fill:var(--down); }
+  .end text { fill:#fff; font:700 13px var(--display); text-anchor:middle; }
+  /* The season score is context, not the headline: same column width, quieter. */
+  td.season { color:var(--muted); font-weight:600; }
+
+  /* ---- Surprise of the matchday ------------------------------------------- */
+  /* One result set like a line of the forecast table: both clubs, the score in
+     the display face, the pre-match percentages as the same three-colour bar. */
+  .surprise { padding:16px 18px; }
+  .surprise .none { margin:0; color:var(--muted); }
+  .smatch { display:grid; grid-template-columns:1fr auto; align-items:center;
+             column-gap:16px; }
+  .smatch .fxt { grid-column:1; }
+  .smatch .fxt.win span { color:var(--up); }
+  .smatch .score { grid-column:2; grid-row:1 / span 2; font:700 34px var(--display);
+                    font-variant-numeric:tabular-nums; }
+  .surprise .bar { max-width:none; margin-top:12px; }
+  .sprob { margin:6px 0 0; color:var(--muted); font-size:14px; }
+  .sprob b { color:var(--ink); }
+  .sfacts { margin-top:12px; }
+  .sfacts th, .sfacts td { padding:6px 5px; }
+  .sfacts td.l { text-align:left; font-family:var(--body); font-weight:600; }
+  .sfacts .to { color:var(--muted); font-weight:400; }
+  .surprise .hint { margin-top:12px; }
+
+  /* ---- Pitch surface and comebacks, under the surprise ------------------- */
+  .chartcol h3 { margin:26px 0 8px; font:600 17px/1.2 var(--display); }
+  .belag td.l .n { display:block; color:var(--muted); font:400 13px var(--body); }
+  .belag tr.total > td { border-top:2px solid var(--ink); }
+  /* The bonus as a number and, under it, as a length - so +19 against +7 is
+     seen before it is read. All bars share one scale, the longest is full. */
+  .belag td.hb { width:112px; }
+  .belag td.hb b { display:block; font:700 18px var(--display); color:var(--up);
+                    font-variant-numeric:tabular-nums; }
+  .hbar { display:block; height:4px; margin:3px 0 0 auto; width:72px; background:var(--track); }
+  .hbar i { display:block; height:100%; background:var(--up); }
+  .cbs { padding:14px 18px 16px; }
+  /* Each marked team is one line: the handwritten note in the margin, the
+     club, then the sentence with the count. The note is out of flow as
+     everywhere else, so the row keeps the height of its text. */
+  .cb { position:relative; padding:6px 0 8px 142px; }
+  .cb + .cb { border-top:1px solid var(--line); }
+  .cb .badge { left:0; top:9px; bottom:auto; transform:rotate(-3.6deg); }
+  .cb p { margin:2px 0 0; font-size:15px; }
+  .cb p.none { margin:0; color:var(--muted); }
+  .cbs .first { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .cbs .first p { margin:0; font-size:15px; }
+  .cbs .first .bar { max-width:none; }
+
+  .hint { color:var(--muted); font-size:14px; line-height:1.58; margin:12px 0 0;
+           max-width:66ch; }
+  /* The legend for the table sits in the chart column, not under the table it
+     explains: side by side the chart ran three hundred pixels short of the
+     fourteen rows beside it, and a legend reads as well across the gutter as
+     underneath. Ruled off so it is not taken for a note about the chart. */
+  .hint.legend { margin-top:15px; padding-top:12px;
+                  border-top:1px solid var(--line); }
+  /* The small print under the forecast, set denser and in two columns so the
+     explanation does not run longer than the table it explains. */
+  .cols { column-count:2; column-gap:46px; max-width:1000px;
+           font-size:15.5px; line-height:1.58; }
+  .cols p { margin:0 0 13px; break-inside:avoid; }
+  .cols.hints { margin-top:14px; }
+  .cols .hint { max-width:none; margin:0 0 13px; }
+
+  /* The rule runs the width of the sheet, the text keeps a readable measure. */
+  footer { margin-top:40px; padding-top:14px; border-top:2.5px solid var(--ink);
+            color:var(--muted); font-size:13.5px; }
+  footer p { margin:0; max-width:100ch; }
+
+  /* ---- Tabs ---------------------------------------------------------------- */
+  /* Three questions on one notice - who is in form, one team up close, what
+     comes next - as index tabs on the same ink rule every heading uses. The
+     open tab breaks the rule, the way a folder tab joins its own sheet; the
+     others stay unfilled, so nothing here reads as a button. */
+  .tabs { display:flex; gap:4px; margin:26px 0 0; padding:0 8px;
+           border-bottom:2.5px solid var(--ink); }
+  .tabs button { appearance:none; cursor:pointer; margin:0 0 -2.5px;
+                  padding:9px 16px 10px; font:600 16px/1 var(--display);
+                  color:var(--muted); background:transparent;
+                  border:2.5px solid transparent; border-radius:4px 4px 0 0; }
+  .tabs button:hover { color:var(--ink); }
+  .tabs button[aria-selected="true"] { color:var(--ink); border-color:var(--ink);
+                                        border-bottom-color:var(--paper); }
+  .tabs button:focus-visible { outline:2px solid var(--ink); outline-offset:-6px; }
+  .view[hidden] { display:none; }
+  /* The tab strip already rules the view off, so the first block starts flush. */
+  .tabs ~ .view > :first-child { margin-top:26px; }
+
+  /* ---- Explanations ------------------------------------------------------ */
+  /* Plain running text at a readable measure, one heading per thing on the
+     sheet it explains. */
+  .method { max-width:70ch; }
+  .method h3 { margin:26px 0 6px; font:600 17px/1.2 var(--display); }
+  .method p { margin:0 0 12px; font-size:15.5px; line-height:1.6; }
+  .method + .fdash { margin-top:44px; }
+
+  /* ---- Team detail panels ------------------------------------------------ */
+  .tdet h2 { margin-top:0; }
+  .tdet h3 { margin:22px 0 8px; font:600 17px/1.2 var(--display); }
+  .tdet .col > h3:first-child { margin-top:0; }
+  .tpanel[hidden] { display:none; }
+  /* The picker is a line on the sheet, not a widget: the name sits in the
+     display face on an ink rule, with the browser's own arrow beside it. */
+  .tpick { display:inline-flex; align-items:baseline; gap:10px; margin:0 0 22px;
+            color:var(--muted); font-size:14.5px; }
+  .tpick select { appearance:none; -webkit-appearance:none; cursor:pointer;
+                   font:700 20px/1.2 var(--display); color:var(--ink);
+                   background:transparent; border:0; border-bottom:2.5px solid var(--ink);
+                   border-radius:0; padding:2px 26px 3px 0; max-width:min(100%,24ch);
+                   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2323201b' stroke-width='2'/%3E%3C/svg%3E");
+                   background-repeat:no-repeat; background-position:right 4px center;
+                   background-size:12px 8px; }
+  .tpick select:focus-visible { outline:2px solid var(--ink); outline-offset:4px; }
+  .thead { display:flex; gap:24px; margin:0 0 20px; }
+  .tchest { display:flex; gap:14px; flex:0 0 auto; }
+  .tname { display:block; font:700 20px var(--display); color:var(--ink); margin-bottom:4px; }
+  .tstats { display:flex; flex-direction:column; gap:3px; font-size:14px; }
+  .tstats span { display:flex; gap:8px; }
+  .tstats b { font-weight:700; }
+  .tstats .trank { color:var(--muted); }
+  .tres { width:100%; border-collapse:collapse; font-size:14px; }
+  .tres th, .tres td { padding:8px 6px; text-align:left; border-bottom:1px solid var(--line); }
+  .tres thead th { font:600 12.5px var(--display); color:var(--ink); border-bottom:2px solid var(--ink); }
+  .tres tbody tr:last-child td { border-bottom:0; }
+  .tres .md { width:40px; color:var(--muted); font:600 var(--display); }
+  .tres .dt { width:80px; color:var(--muted); }
+  .tres .opp, .tres .vs { font-weight:600; }
+  .tres .vs { color:var(--muted); font-size:12px; margin-left:3px; }
+  .tres .sc { width:80px; font-weight:600; white-space:nowrap; }
+  .tres .pr, .tres .pw { color:var(--muted); width:80px; }
+  /* Result from the team's side, in the same three colours as the form dots. */
+  .res { display:inline-block; width:18px; height:18px; margin-right:7px; border-radius:2px;
+          font:700 11.5px/18px var(--display); text-align:center; color:#fff; }
+  .res.w { background:var(--up); }
+  .res.d { background:var(--draw); color:var(--ink); }
+  .res.l { background:var(--down); }
+  .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
+
+  /* ---- Season simulation -------------------------------------------------- */
+  .sim { max-width:1080px; margin:34px auto 0; }
+  .sim table { width:100%; }
+  .sim th { text-align:center; }
+  .sim th.l { text-align:left; }
+  .sim td.l { display:flex; align-items:center; gap:8px; }
+  .sim td.l span { font-weight:600; }
+  .sim td { padding:8px; text-align:right; }
+  .sim .bar { display:flex; height:5px; max-width:180px; margin:5px 0 2px;
+              overflow:hidden; background:var(--track); }
+  .sim .bar i { flex-grow:1; }
+
+  /* Two columns as soon as the table fits next to the chart without scrolling. */
+  @media (min-width:1400px) {
+    /* Nine columns of table need the room more than five matchdays of chart. */
+    .dash { grid-template-columns:minmax(0,60fr) minmax(0,40fr); gap:30px; }
+  }
+  @media (max-width:1399px) {
+    /* Stacked: keep one comfortable measure instead of stretching to 1760px. */
+    .dash, .pitchsec, .fdash, .tdet { max-width:1080px;
+                                margin-left:auto; margin-right:auto; }
+  }
+  /* Below this the two columns of small print would be forty characters wide,
+     which is worse than one column of the same text. */
+  @media (max-width:900px) {
+    .cols { column-count:1; max-width:66ch; font-size:16px; }
+  }
+  @media (max-width:700px) {
+    .s-hide { display:none; }
+    .mhead { align-items:flex-start; }
+    .where { text-align:left; }
+    .seasons { gap:10px; font-size:13px; }
+    .facts { gap:12px 26px; padding:13px 0 24px; }
+    th, td { padding:9px 5px; }
+    th:first-child, td:first-child { padding-left:10px; }
+    th:last-child, td:last-child { padding-right:10px; }
+    td.rank { width:38px; }
+    td.team { min-width:0; }
+    .tn { white-space:normal; }
+    /* Six columns is already a lot on a phone: the season score is the one that
+       can go, the form number and the table place carry the message. */
+    td.season, th.season { display:none; }
+    /* Squeezed into a phone the full-width pitch would shrink the jerseys to a
+       few pixels, so it keeps a readable width and scrolls sideways instead. */
+    .pwrap { overflow-x:auto; }
+    .pwrap svg { min-width:700px; }
+    /* Handwriting needs more size than a grotesque to stay legible, so the
+       badge gives up padding on a phone rather than point size. A narrow cell
+       has no spare width beside the record, so the note hangs off the bottom
+       left of the name block instead - still out of flow, still over the rule. */
+    .badge { font-size:14px; padding:1px 10px 2px; left:30px; bottom:-9px;
+              transform:rotate(-3.4deg); }
+    /* No free space beside the clubs at this width - the note covered a name -
+       so it moves out into the date column, under the kick-off, and reads as
+       written in the margin. */
+    .fx .badge { left:-56px; right:auto; top:auto; bottom:-6px;
+                  transform:rotate(-4deg); }
+    /* Less room, so the strokes reach further across the row. */
+    tr.marked { background-size:82% 58%, 58% 38%; }
+    .tc { gap:7px; }
+    .lg { width:23px; height:23px; }
+    .tok { width:24px; height:24px; font-size:12.5px; }
+    .pw b { font-size:20px; }
+    /* The chart scales with the viewport, so its labels need bigger user units. */
+    .tick { font-size:19px; }
+    /* No margin to write in on a phone: the note goes above its line instead. */
+    .cb { padding:34px 0 8px; }
+    .cb .badge { left:4px; top:4px; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="wrap">
+    <div class="mhead">
+      <div>
+        <h1>Power Ranking</h1>
+        <p class="tag">Wer gerade gut spielt – gemessen an den letzten fünf Spieltagen und
+        daran, gegen wen. Die Tabelle zeigt die Saison, diese Seite den Moment.</p>
+      </div>
+      <p class="where">Kreisliga A Hunsrück-Mosel<br>Saison 2026/27<br>
+      Nach <b>Spieltag 1</b>, 09.08.2026</p>
+    </div>
+    <nav class="seasons"><span>2026/27</span><a href="2025-26/">2025/26</a></nav>
+    <div class="facts">
+      <p class="fact"><span class="k">Beste Form</span>
+      <span class="t">TuS Kirchberg II</span>
+      <span class="n pos">58,0</span></p>
+      <p class="fact"><span class="k">Schwächste Form</span>
+      <span class="t">SG Werlau</span>
+      <span class="n neg">42,0</span></p>
+      <p class="fact"><span class="k">Mannschaft der Stunde</span>
+      <span class="t">VfB Baybachhöhe</span><span class="chip up">+2</span></p>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-form" aria-controls="v-form" aria-selected="true" data-view="form">Form</button>
+    <button role="tab" id="t-team" aria-controls="v-team" aria-selected="false" data-view="team">Team im Detail</button>
+    <button role="tab" id="t-prognose" aria-controls="v-prognose" aria-selected="false" data-view="prognose">Prognose</button>
+    <button role="tab" id="t-methodik" aria-controls="v-methodik" aria-selected="false" data-view="methodik">Erklärungen</button>
+  </div>
+  <div class="view" id="v-form" role="tabpanel" aria-labelledby="t-form">
+  <section class="pitchsec">
+    <h2>Aufstellung</h2>
+    <p class="sub">Ein Trikot je Team, aufgestellt nach der aktuellen Form.
+    <strong>Die Nummer am Trikot ist der Platz in der Formtabelle.</strong></p>
+    <div class="pitchcol">
+      <div class="pends">
+        <p class="pend"><i class="neg"></i>schwächer<b>40</b></p>
+        <p class="pend"><b>60</b>stärker<i class="pos"></i></p>
+      </div>
+      <div class="pwrap"><svg viewBox="0 0 1600 260" role="img" aria-label="Alle 14 Teams nach Form von 40 links bis 60 rechts; die Nummer am Trikot ist der Rang">
+<g class="pg"><rect x="12" y="12" width="1576" height="236" rx="3"/><rect x="12" y="34.0" width="104" height="192"/><rect x="1484" y="34.0" width="104" height="192"/><rect x="12" y="85.8" width="36" height="88.3"/><rect x="1552" y="85.8" width="36" height="88.3"/><circle cx="800.0" cy="130" r="58.0"/></g>
+<line class="half" x1="800.0" y1="12" x2="800.0" y2="248"/><line class="axis" x1="92" y1="130" x2="1508" y2="130"/>
+<line class="stick" x1="132.0" y1="123" x2="132.0" y2="137"/>
+<line class="stick" x1="466.0" y1="123" x2="466.0" y2="137"/>
+<line class="stick" x1="1134.0" y1="123" x2="1134.0" y2="137"/>
+<line class="stick" x1="1468.0" y1="123" x2="1468.0" y2="137"/>
+<g class="ptok" transform="translate(1335.0 130) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/tus-kirchberg-ii.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">1</text><title>1. TuS Kirchberg II - 58,0</title></g>
+<g class="ptok" transform="translate(1128.1 130) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/vfb-baybachhoehe.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">2</text><title>2. VfB Baybachhöhe - 54,9</title></g>
+<g class="ptok" transform="translate(1012.5 130) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sv-blankenrath.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">3</text><title>3. SV Blankenrath - 53,2</title></g>
+<g class="ptok" transform="translate(1012.5 78) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/tus-rheinboellen.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">4</text><title>4. TuS Rheinböllen - 53,2</title></g>
+<g class="ptok" transform="translate(922.7 130) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-braunshorn.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">5</text><title>5. SG Braunshorn - 51,8</title></g>
+<g class="ptok" transform="translate(922.7 78) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-rheinblick-oberwesel.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">6</text><title>6. SG Rheinblick Oberwesel - 51,8</title></g>
+<g class="ptok" transform="translate(849.9 130) scale(1.25)"><path class="pos" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sv-strimmig.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">7</text><title>7. SV Strimmig - 50,7</title></g>
+<g class="ptok" transform="translate(750.1 130) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-bremm.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">8</text><title>8. SG Bremm - 49,3</title></g>
+<g class="ptok" transform="translate(677.3 130) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sc-weiler.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">9</text><title>9. SC Weiler - 48,2</title></g>
+<g class="ptok" transform="translate(677.3 78) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-dickenschied.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">10</text><title>10. SG Dickenschied - 48,2</title></g>
+<g class="ptok" transform="translate(587.5 130) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">11</text><title>11. SG Vorderhunsrück Sabershausen - 46,8</title></g>
+<g class="ptok" transform="translate(587.5 78) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-zell.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">12</text><title>12. SG Zell - 46,8</title></g>
+<g class="ptok" transform="translate(471.9 130) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/ssv-boppard.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">13</text><title>13. SSV Boppard - 45,1</title></g>
+<g class="ptok" transform="translate(265.0 130) scale(1.25)"><path class="neg" d="M-7,-18 L-13,-18 L-21,-10 L-15.5,-1 L-12,-5.5 L-12.5,19 L12.5,19 L12,-5.5 L15.5,-1 L21,-10 L13,-18 L7,-18 C6.5,-13 -6.5,-13 -7,-18 Z"/><circle class="in" cy="6.5" r="11.5"/><image href="../../assets/logos/sg-werlau.png" x="-10" y="-3.5" width="20" height="20" preserveAspectRatio="xMidYMid meet"/><circle class="rkb" cx="16" cy="16" r="8"/><text class="rk" x="16" y="20">14</text><title>14. SG Werlau - 42,0</title></g>
+</svg></div>
+      <p class="phead">Links liegen die Teams unter dem Ligadurchschnitt, rechts davon die
+      darüber.</p>
+    </div>
+  </section>
+
+  <div class="dash">
+    <div class="col">
+      <section>
+        <h2>Formtabelle</h2>
+        <p class="sub">Sortiert nach den letzten fünf Spieltagen, nicht nach der Saison.
+        Fünf Spiele beschreiben, was war – vorhersagen können sie nichts.</p>
+        <div class="card rank">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th class="l">Team</th><th class="l">Form</th>
+                <th>+/&minus;</th><th class="l season">Saison</th>
+                <th class="s-hide">Sp</th><th class="s-hide">Tore</th>
+                <th class="s-hide">Diff</th><th class="s-hide">Rest</th><th>Tabelle</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class=""><td class="rank"><span class="tok top">1</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/tus-kirchberg-ii.png" alt=""><div><span class="tn">TuS Kirchberg II</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div></td><td class="power"><div class="pw"><b>58,0</b></div></td><td><span class="flat">–</span></td><td class="power season">50,4</td><td class="s-hide">1</td><td class="s-hide">5:0</td><td class="s-hide">+5</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">1<span class="chip flat">±0</span></td></tr>
+              <tr class="marked"><td class="rank"><span class="tok top">2</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/vfb-baybachhoehe.png" alt=""><div><span class="tn">VfB Baybachhöhe</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div><span class="badge">Mannschaft der Stunde</span></td><td class="power"><div class="pw"><b>54,9</b></div></td><td><span class="flat">–</span></td><td class="power season">50,2</td><td class="s-hide">1</td><td class="s-hide">2:0</td><td class="s-hide">+2</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">4<span class="chip up">+2</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok top">3</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sv-blankenrath.png" alt=""><div><span class="tn">SV Blankenrath</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div></td><td class="power"><div class="pw"><b>53,2</b></div></td><td><span class="flat">–</span></td><td class="power season">50,2</td><td class="s-hide">1</td><td class="s-hide">4:1</td><td class="s-hide">+3</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">2<span class="chip down">−1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">4</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/tus-rheinboellen.png" alt=""><div><span class="tn">TuS Rheinböllen</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div></td><td class="power"><div class="pw"><b>53,2</b></div></td><td><span class="flat">–</span></td><td class="power season">50,2</td><td class="s-hide">1</td><td class="s-hide">3:0</td><td class="s-hide">+3</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">3<span class="chip down">−1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">5</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-braunshorn.png" alt=""><div><span class="tn">SG Braunshorn</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div></td><td class="power"><div class="pw"><b>51,8</b></div></td><td><span class="flat">–</span></td><td class="power season">50,1</td><td class="s-hide">1</td><td class="s-hide">1:0</td><td class="s-hide">+1</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">6<span class="chip up">+1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">6</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-rheinblick-oberwesel.png" alt=""><div><span class="tn">SG Rheinblick Oberwesel</span><span class="form"><span class="seg" aria-hidden="true"><i class="w"></i></span><span class="rt">1-0-0</span></span></div></div></td><td class="power"><div class="pw"><b>51,8</b></div></td><td><span class="flat">–</span></td><td class="power season">50,1</td><td class="s-hide">1</td><td class="s-hide">4:3</td><td class="s-hide">+1</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">5<span class="chip down">−1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">7</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sv-strimmig.png" alt=""><div><span class="tn">SV Strimmig</span><span class="form"><span class="seg" aria-hidden="true"><i class="d"></i></span><span class="rt">0-1-0</span></span></div></div></td><td class="power"><div class="pw"><b>50,7</b></div></td><td><span class="flat">–</span></td><td class="power season">50,0</td><td class="s-hide">1</td><td class="s-hide">0:0</td><td class="s-hide">+0</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">8<span class="chip up">+1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">8</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-bremm.png" alt=""><div><span class="tn">SG Bremm</span><span class="form"><span class="seg" aria-hidden="true"><i class="d"></i></span><span class="rt">0-1-0</span></span></div></div></td><td class="power"><div class="pw"><b>49,3</b></div></td><td><span class="flat">–</span></td><td class="power season">50,0</td><td class="s-hide">1</td><td class="s-hide">0:0</td><td class="s-hide">+0</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">7<span class="chip down">−1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">9</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sc-weiler.png" alt=""><div><span class="tn">SC Weiler</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>48,2</b></div></td><td><span class="flat">–</span></td><td class="power season">49,9</td><td class="s-hide">1</td><td class="s-hide">3:4</td><td class="s-hide">&minus;1</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">9<span class="chip flat">±0</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">10</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-dickenschied.png" alt=""><div><span class="tn">SG Dickenschied</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>48,2</b></div></td><td><span class="flat">–</span></td><td class="power season">49,9</td><td class="s-hide">1</td><td class="s-hide">0:1</td><td class="s-hide">&minus;1</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">10<span class="chip flat">±0</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok">11</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt=""><div><span class="tn">SG Vorderhunsrück Sabershausen</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>46,8</b></div></td><td><span class="flat">–</span></td><td class="power season">49,8</td><td class="s-hide">1</td><td class="s-hide">1:4</td><td class="s-hide">&minus;3</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">12<span class="chip up">+1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok bottom">12</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-zell.png" alt=""><div><span class="tn">SG Zell</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>46,8</b></div></td><td><span class="flat">–</span></td><td class="power season">49,8</td><td class="s-hide">1</td><td class="s-hide">0:3</td><td class="s-hide">&minus;3</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">13 H / 12 A</span></td><td class="tab">13<span class="chip up">+1</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok bottom">13</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/ssv-boppard.png" alt=""><div><span class="tn">SSV Boppard</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>45,1</b></div></td><td><span class="flat">–</span></td><td class="power season">49,8</td><td class="s-hide">1</td><td class="s-hide">0:2</td><td class="s-hide">&minus;2</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">11<span class="chip down">−2</span></td></tr>
+              <tr class=""><td class="rank"><span class="tok bottom">14</span></td><td class="team"><div class="tc"><img class="lg" src="../../assets/logos/sg-werlau.png" alt=""><div><span class="tn">SG Werlau</span><span class="form"><span class="seg" aria-hidden="true"><i class="l"></i></span><span class="rt">0-0-1</span></span></div></div></td><td class="power"><div class="pw"><b>42,0</b></div></td><td><span class="flat">–</span></td><td class="power season">49,6</td><td class="s-hide">1</td><td class="s-hide">0:5</td><td class="s-hide">&minus;5</td><td class="s-hide season"><div class="pw"><b>50,0</b></div><span class="rs">12 H / 13 A</span></td><td class="tab">14<span class="chip flat">±0</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="col chartcol">
+      <section>
+        <h2>Überraschung des Spieltags</h2>
+        <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
+        Unentschieden zählen nicht.</p>
+        <div class="card surprise"><p class="none">Noch keine Prognose – dafür braucht es zwei gespielte Spieltage.</p></div>
+        <h3>Belag</h3>
+        <div class="card">
+          <table class="sfacts belag">
+            <thead><tr><th class="l">Platz</th><th>Tore/Spiel</th><th>Heimbonus</th></tr></thead>
+            <tbody><tr class=""><td class="l">Rasen<span class="n">113 Spiele</span></td><td>3,78</td><td class="hb"><b>+7</b><span class="hbar"><i style="width:38%"></i></span></td></tr><tr class=""><td class="l">Kunstrasen<span class="n">95 Spiele</span></td><td>3,79</td><td class="hb"><b>+19</b><span class="hbar"><i style="width:100%"></i></span></td></tr><tr class=""><td class="l">Hartplatz<span class="n">8 Spiele</span></td><td>3,12</td><td class="hb"><b>+15</b><span class="hbar"><i style="width:80%"></i></span></td></tr><tr class="total"><td class="l">Liga gesamt<span class="n">216 Spiele</span></td><td>3,76</td><td class="hb"><b>+13</b><span class="hbar"><i style="width:67%"></i></span></td></tr></tbody>
+          </table>
+        </div>
+        <p class="hint"><strong>Heimbonus</strong>: um wie viele Prozentpunkte der Gastgeber besser
+        abschneidet, als die Stärke beider Teams erwarten lässt – +7 auf Rasen heißt
+        7 Siege mehr aus hundert Heimspielen. Ein Hinweis, kein Beweis.</p>
+        <h3>Rückstand und Führung</h3>
+        <div class="card cbs">
+          <div class="cb"><span class="badge">Comeback-Team</span><p class="none">diesen Spieltag keines</p></div><div class="cb"><span class="badge">Führung verspielt</span><p class="none">diesen Spieltag keines</p></div>
+          <div class="first"><p>Wer das erste Tor schießt, gewinnt <b>83&nbsp;%</b> der
+          Spiele, 0&nbsp;% enden remis, 17&nbsp;% gehen noch
+          verloren.</p><div class="bar"><i class="w" style="width:83.3%"></i><i class="d" style="width:0.0%"></i><i class="l" style="width:16.7%"></i></div></div>
+        </div>
+        <p class="hint">Aus den Torminuten dieser Saison: die meisten Punkte nach Rückstand und
+        die meisten aus eigener Führung liegen gelassen.</p>
+        <p class="hint legend"><strong>Form</strong> zählt nur die letzten fünf Spieltage,
+        <strong>Saison</strong> alle bisherigen – 50 ist jeweils Ligadurchschnitt. Der Wert hinter
+        dem Tabellenplatz ist der Abstand zur Formtabelle: <span class="chip up">+2</span> heißt
+        zwei Plätze besser als in der offiziellen Tabelle. Alle Spalten und Marker:
+        <a href="#methodik">Erklärungen</a>.</p>
+      </section>
+    </div>
+  </div>
+  </div>
+  <div class="view" id="v-team" role="tabpanel" aria-labelledby="t-team" hidden>
+  <section class="tdet">
+    <h2>Team im Detail</h2>
+    <p class="sub">Saisonverlauf, alle Ergebnisse und die verbleibenden Gegner eines Teams.</p>
+    <label class="tpick">Team <select id="tpick"><option value="0">1. TuS Kirchberg II</option><option value="1">2. VfB Baybachhöhe</option><option value="2">3. SV Blankenrath</option><option value="3">4. TuS Rheinböllen</option><option value="4">5. SG Braunshorn</option><option value="5">6. SG Rheinblick Oberwesel</option><option value="6">7. SV Strimmig</option><option value="7">8. SG Bremm</option><option value="8">9. SC Weiler</option><option value="9">10. SG Dickenschied</option><option value="10">11. SG Vorderhunsrück Sabershausen</option><option value="11">12. SG Zell</option><option value="12">13. SSV Boppard</option><option value="13">14. SG Werlau</option></select></label>
+    <div class="tpanel dash" data-rank="0" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/tus-kirchberg-ii.png" alt="">
+        <div>
+          <span class="tname">TuS Kirchberg II</span>
+          <div class="tstats">
+            <span class="form"><b>58,0</b> <span class="trank">Rang 1</span></span>
+            <span class="tpower">Saison <b>50,4</b></span>
+            <span class="tpos">Tabelle <b>1</b> <span class="flat">(±0)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>1-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">10</td><td class="dt">Sa 10.10.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="1" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/vfb-baybachhoehe.png" alt="">
+        <div>
+          <span class="tname">VfB Baybachhöhe</span>
+          <div class="tstats">
+            <span class="form"><b>54,9</b> <span class="trank">Rang 2</span></span>
+            <span class="tpower">Saison <b>50,2</b></span>
+            <span class="tpos">Tabelle <b>4</b> <span class="up">(+2)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>1-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">6</td><td class="dt">Fr 11.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">2</td><td class="dt">Di 15.09.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">7</td><td class="dt">Fr 18.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">9</td><td class="dt">Di 06.10.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">11</td><td class="dt">Sa 17.10.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">12</td><td class="dt">Fr 23.10.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">13</td><td class="dt">Sa 31.10.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">14</td><td class="dt">Sa 07.11.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="2" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sv-blankenrath.png" alt="">
+        <div>
+          <span class="tname">SV Blankenrath</span>
+          <div class="tstats">
+            <span class="form"><b>53,2</b> <span class="trank">Rang 3</span></span>
+            <span class="tpower">Saison <b>50,2</b></span>
+            <span class="tpos">Tabelle <b>2</b> <span class="down">(−1)</span></span>
+            <span class="trecord"><b>1-0-0</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">6</td><td class="dt">Mi 09.09.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">9</td><td class="dt">Fr 02.10.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="3" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/tus-rheinboellen.png" alt="">
+        <div>
+          <span class="tname">TuS Rheinböllen</span>
+          <div class="tstats">
+            <span class="form"><b>53,2</b> <span class="trank">Rang 4</span></span>
+            <span class="tpower">Saison <b>50,2</b></span>
+            <span class="tpos">Tabelle <b>3</b> <span class="down">(−1)</span></span>
+            <span class="trecord"><b>1-0-0</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">6</td><td class="dt">Fr 11.09.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">2</td><td class="dt">Di 15.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">16</td><td class="dt">Fr 05.03.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="4" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-braunshorn.png" alt="">
+        <div>
+          <span class="tname">SG Braunshorn</span>
+          <div class="tstats">
+            <span class="form"><b>51,8</b> <span class="trank">Rang 5</span></span>
+            <span class="tpower">Saison <b>50,1</b></span>
+            <span class="tpos">Tabelle <b>6</b> <span class="up">(+1)</span></span>
+            <span class="trecord"><b>1-0-0</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">6</td><td class="dt">Fr 11.09.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">9</td><td class="dt">Fr 02.10.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="5" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-rheinblick-oberwesel.png" alt="">
+        <div>
+          <span class="tname">SG Rheinblick Oberwesel</span>
+          <div class="tstats">
+            <span class="form"><b>51,8</b> <span class="trank">Rang 6</span></span>
+            <span class="tpower">Saison <b>50,1</b></span>
+            <span class="tpos">Tabelle <b>5</b> <span class="down">(−1)</span></span>
+            <span class="trecord"><b>1-0-0</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">6</td><td class="dt">Fr 11.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="6" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sv-strimmig.png" alt="">
+        <div>
+          <span class="tname">SV Strimmig</span>
+          <div class="tstats">
+            <span class="form"><b>50,7</b> <span class="trank">Rang 7</span></span>
+            <span class="tpower">Saison <b>50,0</b></span>
+            <span class="tpos">Tabelle <b>8</b> <span class="up">(+1)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>0-1-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">11</td><td class="dt">Sa 17.10.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="7" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-bremm.png" alt="">
+        <div>
+          <span class="tname">SG Bremm</span>
+          <div class="tstats">
+            <span class="form"><b>49,3</b> <span class="trank">Rang 8</span></span>
+            <span class="tpower">Saison <b>50,0</b></span>
+            <span class="tpos">Tabelle <b>7</b> <span class="down">(−1)</span></span>
+            <span class="trecord"><b>0-1-0</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">6</td><td class="dt">Mi 09.09.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">8</td><td class="dt">Fr 25.09.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">9</td><td class="dt">Sa 03.10.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">10</td><td class="dt">Sa 10.10.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">12</td><td class="dt">Fr 23.10.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">15</td><td class="dt">Fr 13.11.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">16</td><td class="dt">Fr 05.03.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="8" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sc-weiler.png" alt="">
+        <div>
+          <span class="tname">SC Weiler</span>
+          <div class="tstats">
+            <span class="form"><b>48,2</b> <span class="trank">Rang 9</span></span>
+            <span class="tpower">Saison <b>49,9</b></span>
+            <span class="tpos">Tabelle <b>9</b> <span class="flat">(±0)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>0-0-1</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">9</td><td class="dt">Di 06.10.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="9" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-dickenschied.png" alt="">
+        <div>
+          <span class="tname">SG Dickenschied</span>
+          <div class="tstats">
+            <span class="form"><b>48,2</b> <span class="trank">Rang 10</span></span>
+            <span class="tpower">Saison <b>49,9</b></span>
+            <span class="tpos">Tabelle <b>10</b> <span class="flat">(±0)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>0-0-1</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="10" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt="">
+        <div>
+          <span class="tname">SG Vorderhunsrück Sabershausen</span>
+          <div class="tstats">
+            <span class="form"><b>46,8</b> <span class="trank">Rang 11</span></span>
+            <span class="tpower">Saison <b>49,8</b></span>
+            <span class="tpos">Tabelle <b>12</b> <span class="up">(+1)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>0-0-1</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">7</td><td class="dt">Fr 18.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">10</td><td class="dt">Fr 09.10.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">12</td><td class="dt">Fr 23.10.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="11" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-zell.png" alt="">
+        <div>
+          <span class="tname">SG Zell</span>
+          <div class="tstats">
+            <span class="form"><b>46,8</b> <span class="trank">Rang 12</span></span>
+            <span class="tpower">Saison <b>49,8</b></span>
+            <span class="tpos">Tabelle <b>13</b> <span class="up">(+1)</span></span>
+            <span class="trecord"><b>0-0-0</b> zu Hause, <b>0-0-1</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">10</td><td class="dt">Fr 09.10.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">13</td><td class="dt">Sa 31.10.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">15</td><td class="dt">Fr 13.11.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="12" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/ssv-boppard.png" alt="">
+        <div>
+          <span class="tname">SSV Boppard</span>
+          <div class="tstats">
+            <span class="form"><b>45,1</b> <span class="trank">Rang 13</span></span>
+            <span class="tpower">Saison <b>49,8</b></span>
+            <span class="tpos">Tabelle <b>11</b> <span class="down">(−2)</span></span>
+            <span class="trecord"><b>0-0-1</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">8</td><td class="dt">So 27.09.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">9</td><td class="dt">Sa 03.10.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">12</td><td class="dt">So 25.10.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="pw">49,6</td></tr><tr><td class="md">14</td><td class="dt">Sa 07.11.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="pw">50,4</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="pw">49,6</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+    <div class="tpanel dash" data-rank="13" hidden>
+      <div class="col">
+    <div class="thead">
+      <div class="tchest"><img class="lg" src="../../assets/logos/sg-werlau.png" alt="">
+        <div>
+          <span class="tname">SG Werlau</span>
+          <div class="tstats">
+            <span class="form"><b>42,0</b> <span class="trank">Rang 14</span></span>
+            <span class="tpower">Saison <b>49,6</b></span>
+            <span class="tpos">Tabelle <b>14</b> <span class="flat">(±0)</span></span>
+            <span class="trecord"><b>0-0-1</b> zu Hause, <b>0-0-0</b> auswärts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3>Verbleibende Gegner</h3>
+    <div class="card">
+      <table class="tres">
+        <thead>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Stärke</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="pw">49,9</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">6</td><td class="dt">So 13.09.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">7</td><td class="dt">So 20.09.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">8</td><td class="dt">Fr 25.09.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">9</td><td class="dt">So 04.10.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">10</td><td class="dt">So 11.10.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">11</td><td class="dt">So 18.10.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="pw">50,1</td></tr><tr><td class="md">12</td><td class="dt">Fr 23.10.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">13</td><td class="dt">So 01.11.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">14</td><td class="dt">So 08.11.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="pw">50,4</td></tr><tr><td class="md">15</td><td class="dt">So 15.11.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">16</td><td class="dt">So 07.03.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="pw">49,8</td></tr><tr><td class="md">17</td><td class="dt">So 14.03.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="pw">49,9</td></tr><tr><td class="md">18</td><td class="dt">So 21.03.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="pw">50,0</td></tr><tr><td class="md">19</td><td class="dt">So 04.04.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="pw">49,8</td></tr><tr><td class="md">20</td><td class="dt">So 11.04.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">21</td><td class="dt">So 18.04.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="pw">50,0</td></tr><tr><td class="md">22</td><td class="dt">So 25.04.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">23</td><td class="dt">So 02.05.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="pw">50,2</td></tr><tr><td class="md">24</td><td class="dt">So 09.05.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="pw">50,1</td></tr><tr><td class="md">25</td><td class="dt">So 16.05.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="pw">50,2</td></tr><tr><td class="md">26</td><td class="dt">So 23.05.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="pw">49,8</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+      <div class="col chartcol">
+        <h3>Saisonverlauf</h3>
+        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Verlauf der Saisonwerte je Spieltag">
+<rect class="zone pos" x="44" y="18" width="822" height="115.3"/><rect class="zone neg" x="44" y="133.3" width="822" height="230.7"/>
+<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">40</text>
+<line class="grid" x1="44" y1="248.7" x2="866" y2="248.7"/><text class="tick" x="36" y="252.7" text-anchor="end">45</text>
+<line class="grid" x1="44" y1="133.3" x2="866" y2="133.3"/><text class="tick" x="36" y="137.3" text-anchor="end">50</text>
+<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">55</text>
+<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
+<g class="line" id="season0" style="--c:#1b6ca8"><polyline points="44.0,124.5"/><circle cx="44.0" cy="124.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="124.5" r="13"/><text x="44.0" y="129.1">1</text></g></g>
+<g class="line" id="season1" style="--c:#9c2f4a"><polyline points="44.0,127.9"/><circle cx="44.0" cy="127.9" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="127.9" r="13"/><text x="44.0" y="132.5">2</text></g></g>
+<g class="line" id="season2" style="--c:#1c7a58"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">3</text></g></g>
+<g class="line" id="season3" style="--c:#d1802a"><polyline points="44.0,129.8"/><circle cx="44.0" cy="129.8" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="129.8" r="13"/><text x="44.0" y="134.4">4</text></g></g>
+<g class="line" id="season4" style="--c:#6d4fa2"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">5</text></g></g>
+<g class="line" id="season5" style="--c:#0f8b9e"><polyline points="44.0,131.3"/><circle cx="44.0" cy="131.3" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="131.3" r="13"/><text x="44.0" y="135.9">6</text></g></g>
+<g class="line" id="season6" style="--c:#b8477e"><polyline points="44.0,132.5"/><circle cx="44.0" cy="132.5" r="3.2"/><g class="end"><circle class="pos" cx="44.0" cy="132.5" r="13"/><text x="44.0" y="137.1">7</text></g></g>
+<g class="line" id="season7" style="--c:#5f7a1f"><polyline points="44.0,134.2"/><circle cx="44.0" cy="134.2" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="134.2" r="13"/><text x="44.0" y="138.8">8</text></g></g>
+<g class="line" id="season8" style="--c:#7a5445"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">9</text></g></g>
+<g class="line" id="season9" style="--c:#3550a0"><polyline points="44.0,135.4"/><circle cx="44.0" cy="135.4" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="135.4" r="13"/><text x="44.0" y="140.0">10</text></g></g>
+<g class="line" id="season10" style="--c:#c2562a"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">11</text></g></g>
+<g class="line" id="season11" style="--c:#2e8f3f"><polyline points="44.0,136.8"/><circle cx="44.0" cy="136.8" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="136.8" r="13"/><text x="44.0" y="141.4">12</text></g></g>
+<g class="line" id="season12" style="--c:#556070"><polyline points="44.0,138.7"/><circle cx="44.0" cy="138.7" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="138.7" r="13"/><text x="44.0" y="143.3">13</text></g></g>
+<g class="line" id="season13" style="--c:#86722a"><polyline points="44.0,142.1"/><circle cx="44.0" cy="142.1" r="3.2"/><g class="end"><circle class="neg" cx="44.0" cy="142.1" r="13"/><text x="44.0" y="146.7">14</text></g></g>
+</svg></div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
+        Die anderen Linien bleiben grau zum Vergleich.</p>
+      </div>
+    </div>
+  </section>
+
+  </div>
+  <div class="view" id="v-prognose" role="tabpanel" aria-labelledby="t-prognose" hidden>
+<div class="fdash solo"><section class="fcast">
+    <h2>Was besser sein müsste – und es nicht ist</h2>
+    <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
+    umgerechnet und an der Saison 2025/26 nachgerechnet.</p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th class="l">Ansatz</th><th>Fehler</th><th>Vorsprung auf die Liga-Quote</th></tr>
+        </thead>
+        <tbody>
+          <tr class=""><td class="l">Form der letzten 5 Spieltage</td><td>0,2157</td><td class="ld">5,2 <span class="pm">± 5,2</span></td></tr>
+          <tr class=""><td class="l">Erwartete Tore (Prognose)</td><td>0,2164</td><td class="ld">4,5 <span class="pm">± 4,4</span></td></tr>
+          <tr class=""><td class="l">Saison-Rating (Elo)</td><td>0,2170</td><td class="ld">3,9 <span class="pm">± 4,8</span></td></tr>
+          <tr class=""><td class="l">Tabellenplatz</td><td>0,2178</td><td class="ld">3,1 <span class="pm">± 3,9</span></td></tr>
+          <tr class=""><td class="l">Punkte pro Spiel</td><td>0,2185</td><td class="ld">2,4 <span class="pm">± 2,3</span></td></tr>
+          <tr class=""><td class="l">Ruhetage vor dem Spiel</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,5</span></td></tr>
+          <tr class=""><td class="l">Heimstärke des Vereins</td><td>0,2207</td><td class="ld">0,2 <span class="pm">± 0,7</span></td></tr>
+          <tr class="base"><td class="l">Liga-Quote (kein Modell)</td><td>0,2209</td><td class="ld"><span class="flat">Referenz</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Kleinerer Fehler ist besser; <strong>Vorsprung</strong> ist der Abstand zur
+    simplen Auskunft „meistens gewinnt das Heimteam“. Kein Ansatz ist nachweisbar besser als
+    diese Auskunft – deshalb ist die Prognose ein Blickwinkel, kein Tipp.</p>
+  </section>
+</div>
+  </div>
+  <div class="view" id="v-methodik" role="tabpanel" aria-labelledby="t-methodik" hidden>
+<section class="method" id="methodik">
+    <h2>Erklärungen</h2>
+    <p class="sub">Wie jede Zahl auf dieser Seite zustande kommt – für alle, die es genau
+    wissen wollen.</p>
+
+    <h3>Form und Saison</h3>
+    <p>Beide Werte sind eine Elo-Wertung: Jedes Team startet bei 1500 Punkten, nach jedem Spiel
+    wandern Punkte vom Verlierer zum Gewinner. Wie viele, hängt von drei Dingen ab – wie
+    überraschend das Ergebnis nach beiden Wertungen war, wie hoch es ausfiel (logarithmisch
+    gedämpft, ein 6:0 zählt nicht dreimal so viel wie ein 2:0) und ob das Heimteam gewonnen hat,
+    das mit einem Heimvorteil von 100 Punkten rechnet. Die Wertung wird für die Anzeige auf eine
+    Skala von 0 bis 100 umgerechnet, 50 ist Ligadurchschnitt.</p>
+    <p><strong>Saison</strong> läuft über alle bisherigen Spiele, wird aber nach wenigen Spielen
+    Richtung 50 gedrückt: Ein Team mit drei Siegen aus drei Spielen ist nicht doppelt so stark
+    wie eines mit einem Sieg. Deshalb liegt die ganze Liga nach fünf Spieltagen eng beieinander –
+    das ist richtig, nicht kaputt. <strong>Form</strong> rechnet dieselbe Wertung nur über die
+    letzten 5 Spieltage, jedes Mal neu von 1500 aus und ohne diese Dämpfung: Sie
+    beschreibt, was zuletzt war, und beansprucht nicht, die Stärke zu messen. Gemessen an der
+    Vorsaison sagt sie den nächsten Spieltag nicht besser voraus als die Tabelle – deshalb
+    steht sie auf der Seite als Beschreibung, nicht als Prognose.</p>
+
+    <h3>Formtabelle</h3>
+    <p>Sortiert nach der Form, nicht nach der Saison. <strong>+/&minus;</strong> ist die
+    Veränderung der Form gegenüber dem letzten Spieltag. Die Punkte unter dem Teamnamen sind
+    dieselben fünf Spiele, chronologisch von links nach rechts: grün Sieg, grau Unentschieden,
+    rot Niederlage. <strong>Tabelle</strong> ist der offizielle Platz; der Wert dahinter ist die
+    Differenz zum Platz in dieser Formtabelle – <span class="chip up">+2</span> heißt, das Team
+    steht hier zwei Plätze besser als in der Tabelle, spielt also gerade über seinem
+    Saisonstand.</p>
+    <p><strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, ohne
+    Heimvorteil verrechnet; die Aufteilung dahinter sagt, wie viele davon zu Hause sind.</p>
+    <p>Zwei Marker, beide nach fester Regel: <strong>Mannschaft der Stunde</strong> steht beim
+    Team mit dem größten Vorsprung dieser Formtabelle auf den eigenen Tabellenplatz, mindestens
+    zwei Plätze. <strong>Formsprung</strong> steht beim größten Zugewinn gegenüber dem letzten
+    Spieltag, mindestens 1,5 Punkte, und nie auf derselben Zeile. Sind die Abstände kleiner,
+    bleiben die Marker weg – ein Platz oder ein halber Punkt liegt im Zufall.</p>
+
+    <h3>Überraschung des Spieltags</h3>
+    <p>Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu diesem
+    Spieltag: der Sieg, dem sie vorher die kleinste Chance gab, wenn sie unter
+    25&nbsp;% lag. Unentschieden zählen nicht, weil das Remis hier in jeder
+    Paarung die unwahrscheinlichste Variante ist – sonst wäre fast jede Woche ein 1:1 die
+    Überraschung. Dieselbe Regel markiert die Überraschungen im Reiter Team im Detail.</p>
+
+    <h3>Belag und Heimbonus</h3>
+    <p>Aus den Spielberichten: Tore pro Spiel und Heimbonus je Belag, über alle Saisons
+    gerechnet, weil eine allein zu dünn ist. <strong>Heimbonus</strong> ist der Unterschied
+    zwischen dem, was die Heimteams tatsächlich geholt haben, und dem, was die Stärke beider
+    Teams ohne Heimvorteil erwarten ließe, in Prozentpunkten. Dass Kunstrasenplätze mehr
+    Heimbonus zeigen, könnte auch daran liegen, dass die stärkeren Vereine auf Kunstrasen
+    spielen – die Rechnung zieht das ab, aber der Rest ist bei dieser Datenmenge ein Hinweis
+    und kein Beweis.</p>
+
+    <h3>Rückstand und Führung</h3>
+    <p>Aus den Torminuten dieser Saison. <strong>Comeback-Team</strong> ist das Team mit den
+    meisten Punkten aus Spielen, in denen es zurücklag, <strong>Führung verspielt</strong> das
+    mit den meisten Punkten, die es aus eigener Führung noch hergegeben hat. Beide Marker
+    brauchen mindestens vier Punkte, also mehr als einen Sieg; bei Gleichstand gewinnt das Team,
+    das dafür weniger Spiele brauchte. Es sind Zählwerte, keine Quoten. Darunter steht, wie
+    oft das Team mit dem ersten Tor am Ende gewinnt – der Maßstab, an dem ein Comeback zu
+    lesen ist.</p>
+
+    <h3>Team im Detail</h3>
+    <p><strong>Siegchance vorher</strong> ist die Prognose für dieses Spiel, gerechnet nur aus
+    den Ergebnissen bis dahin, aus Sicht dieses Teams. Als <strong>Überraschung</strong> gilt
+    ein Sieg unter 25&nbsp;%, dieselbe Regel wie oben. <strong>Stärke</strong> bei
+    den verbleibenden Gegnern ist deren Saisonwert. Der Saisonverlauf zeigt den Saisonwert nach
+    jedem Spieltag; die anderen Teams bleiben grau zum Vergleich.</p>
+
+    <h3>Prognose</h3>
+    <p>Aus allen bisherigen Ergebnissen bekommt jedes Team eine Angriffs- und eine
+    Abwehrstärke. Daraus folgt, wie viele Tore beide Seiten in dieser Paarung im Schnitt
+    erzielen – Heimvorteil eingerechnet –, und aus dem Abstand zwischen beiden werden die drei
+    Prozentwerte. Diese Umrechnung ist an der kompletten Saison 2025/26 geeicht, nicht
+    geschätzt. <strong>Tore erwartet</strong> ist die Summe für beide Mannschaften, also eher
+    ein Hinweis auf offenes Spiel oder Abtasten als auf den Sieger. <strong>Topspiel</strong>
+    markiert die Paarung mit der besten gemeinsamen Form beider Teams – eine Auszeichnung nach
+    der Formtabelle, keine Aussage über den Ausgang.</p>
+    <p>Zwei Dinge fallen auf und sind beide richtig so. Ein <strong>Remis ist nie der
+    wahrscheinlichste Ausgang</strong>, obwohl rund jedes sechste Spiel remis endet – für ein
+    Unentschieden müssen beide Seiten dieselbe Zahl treffen, jede einzelne Torzahl ist
+    unwahrscheinlicher als „irgendein Sieg“. Und die <strong>Prozente liegen eng
+    beieinander</strong>, auch wenn ein Team klar stärker eingeschätzt wird. Das ist gemessen
+    und nicht gedämpft: Ein ganzes Tor Vorsprung in der Erwartung verschiebt die Siegchance in
+    dieser Liga nur um rund sechs Prozentpunkte, weil die Ergebnisse hier zu stark streuen, um
+    mehr herzugeben.</p>
+    <p><strong>Bilanz</strong> zählt, wie oft der wahrscheinlichste Ausgang eingetreten ist,
+    und rechnet daneben einen Fehlerwert (kleiner ist besser), der auch die Höhe der Prozente
+    bewertet. Verglichen wird mit der stur getippten Liga-Quote – „meistens gewinnt das
+    Heimteam“ –, dem ehrlichen Nullpunkt. Nichts davon wird gespeichert: Jede Prognose folgt
+    allein aus den Ergebnissen davor, die Bilanz wird jedes Mal aus dem Spielplan neu gerechnet.
+    Über die Vorsaison lag die Trefferquote bei 57&nbsp;%.</p>
+
+    <h3>Saisonausblick</h3>
+    <p>Die verbleibenden Spiele werden 4000-mal mit denselben erwarteten Toren wie in der
+    Prognose durchgespielt und die entstehenden Tabellen gezählt. Die Stärken sind dabei die
+    aktuelle Schätzung und werden selbst nicht variiert, die Streuung ist also wenn überhaupt zu
+    eng. Früh in der Saison ist diese Schätzung meist der Ligadurchschnitt, die Prozente
+    wiederholen dann die Tabelle und die verbleibenden Spiele. Ein Team unter 1&nbsp;% ist nicht
+    bei null.</p>
+
+    <h3>Was besser sein müsste</h3>
+    <p>Jeder Ansatz wurde mit demselben Verfahren in Wahrscheinlichkeiten umgerechnet und an der
+    Saison 2025/26 ab Spieltag 6 nachgerechnet.
+    <strong>Fehler</strong> ist der mittlere Prognosefehler über alle Spiele, kleiner ist
+    besser. <strong>Vorsprung</strong> ist der Abstand zur Liga-Quote in Tausendsteln, mit dem
+    Standardfehler dahinter. Kein einziger Ansatz erreicht zwei Standardfehler: Keiner ist
+    nachweisbar besser als diese simple Auskunft. Auch die Reihenfolge in der Tabelle ist selbst
+    Zufall – rechnet man die Eichung strenger, tauschen die Zeilen die Plätze. Deshalb ist die
+    Prognose ein Blickwinkel und kein Tipp, und deshalb bleibt die Form auf dieser Seite eine
+    Beschreibung.</p>
+
+    <h3>Was sich nicht messen lässt</h3>
+    <p>fussball.de veröffentlicht für Amateurligen nur Ergebnisse, Torminuten, Karten, Anstoß,
+    Platz und Zuschauer. Wer ein Spiel dominiert hat, wer verletzt fehlt, wie der Platz oder das
+    Wetter war – dafür gibt es keine Daten, und diese Seite baut dafür auch keine Ersatzwerte.</p>
+  </section>
+
+  </div>
+  <footer>
+    <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle
+    Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
+    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 17.09.2026</p>
+  </footer>
+</main>
+<script>
+  const panels = [...document.querySelectorAll('.tpanel')];
+  const picker = document.getElementById('tpick');
+
+  // The detail section follows the dropdown.
+  function showDetail(rank) {
+    panels.forEach(p => {
+      p.hidden = p.dataset.rank !== rank;
+      if (p.hidden) return;
+      const seasonLine = p.querySelector('#season' + rank);
+      if (seasonLine) {
+        p.querySelectorAll('.line').forEach(l => l.classList.remove('sel'));
+        seasonLine.classList.add('sel');
+        seasonLine.parentNode.appendChild(seasonLine);
+      }
+    });
+  }
+  if (picker) {
+    picker.addEventListener('change', () => showDetail(picker.value));
+    showDetail(picker.value);
+  }
+
+  // On a phone the pitch is wider than the screen and scrolls. Left-aligned it
+  // opens on the weakest teams with the halfway line off-screen, so it starts
+  // centred on the league average instead. Redone whenever its tab opens,
+  // because a hidden pitch has no width to centre on.
+  const pw = document.querySelector('.pwrap');
+  function centrePitch() { if (pw) pw.scrollLeft = (pw.scrollWidth - pw.clientWidth) / 2; }
+
+  // Tabs: the hash names the open one, so a view can be linked to directly.
+  const tabs = [...document.querySelectorAll('.tabs button')];
+  const views = [...document.querySelectorAll('.view')];
+  function showView(id) {
+    tabs.forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === id)));
+    views.forEach(v => v.hidden = v.id !== 'v-' + id);
+    centrePitch();
+  }
+  if (tabs.length) {
+    tabs.forEach(b => b.addEventListener('click', () => {
+      showView(b.dataset.view);
+      history.replaceState(null, '', '#' + b.dataset.view);
+    }));
+    const start = location.hash.slice(1);
+    showView(tabs.some(b => b.dataset.view === start) ? start : 'form');
+    // In-page links to a tab (the notes point at #methodik) open it.
+    window.addEventListener('hashchange', () => {
+      const id = location.hash.slice(1);
+      if (!tabs.some(b => b.dataset.view === id)) return;
+      showView(id);
+      document.querySelector('.tabs').scrollIntoView();
+    });
+  } else {
+    centrePitch();
+  }
+</script>
+</body>
+</html>

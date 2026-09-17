@@ -18,7 +18,7 @@ from config import (  # noqa: E402
 )
 from details import collect as collect_details  # noqa: E402
 from parse import collect_season, save_matches_csv, validate  # noqa: E402
-from report import build_table, write_report  # noqa: E402
+from report import build_table, write_season  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -101,8 +101,8 @@ def main():
         print(f"{i:>3}. {t['team']:<32}{t['form']:>7.1f}{t['power']:>8.1f}"
               f"{t['matches']:>4}{t['position']:>5}{note}")
 
-    played = [r for r in load_season(args.season) if r["status"] == "played"]
-    logger.info(f"Wrote {write_report(args.season, played)}")
+    all_rows = load_season(args.season)
+    logger.info(f"Wrote {write_season(args.season, all_rows)}")
     return 0
 
 

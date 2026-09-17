@@ -227,14 +227,22 @@ def outliers(teams):
     }
 
 
-def page_data(season):
+def page_data(played_rows, season):
     """What the page will show: the surface table over every season on file
     (the current one alone is too thin for it), the two comeback outliers and
-    the first-goal rates for the current season only."""
+    the first-goal rates for the current season only.
+
+    Args:
+        played_rows: all played matches in the current season (already filtered)
+        season: season id for comeback filtering
+    """
     details = load_csv(DETAILS_CSV)
     events = load_csv(EVENTS_CSV)
     surface = surface_effect(played(set(STAFFEL_IDS)), details)
-    teams, first = comebacks(played({season}), events)
+    # Filter comebacks to only the played matches passed in
+    match_ids = {r["match_id"] for r in played_rows}
+    season_events = [e for e in events if e["match_id"] in match_ids]
+    teams, first = comebacks(played_rows, season_events)
     return surface, outliers(teams), first
 
 
