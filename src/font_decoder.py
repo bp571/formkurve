@@ -71,12 +71,26 @@ def get_font_mapping(font_name: str) -> Dict[int, str]:
         data = response.content
         font_file.write_bytes(data)
 
-    cmap = ttLib.TTFont(BytesIO(data)).getBestCmap()
+    font = ttLib.TTFont(BytesIO(data))
+    cmap = font.getBestCmap()
     mapping = {
         codepoint: GLYPH_TO_CHAR[glyph]
         for codepoint, glyph in cmap.items()
         if glyph in GLYPH_TO_CHAR
     }
+    if not mapping:
+        # The match detail pages use a second scheme: one IcoMoon build of the
+        # same typeface with 193 glyphs named uniE650..., so the names say
+        # nothing. But the build is fixed and only the cmap is shuffled per
+        # response, and its glyph order is ASCII from the space onwards - so
+        # the glyph index is the character. The face is caps-only, hence
+        # "FREITAG"; digits and punctuation come out exactly.
+        order = font.getGlyphOrder()
+        mapping = {
+            codepoint: chr(32 + order.index(glyph))
+            for codepoint, glyph in cmap.items()
+            if order.index(glyph) < 95
+        }
     if not mapping:
         raise ValueError(f"Font {font_name} yielded no usable glyphs")
 

@@ -23,6 +23,7 @@ from config import (
     STAFFEL_NAME,
     team_slug,
 )
+from analysis import page_data
 from backtest import outcome_of, probabilities
 from explore_predictors import SKIP_MATCHDAYS, compare
 from predict import (
@@ -632,6 +633,164 @@ def match_probabilities(rows, season):
     return result
 
 
+# A win the forecast gave less than one in four. The same floor marks the
+# "Überraschung" badge in the team panels, so the card and the badge agree.
+SURPRISE_MAX_P = 0.25
+
+
+def surprise_card(rows, table, matchday, logos):
+    """The win of the latest matchday that the forecast gave the smallest chance,
+    with the numbers a reader needs to check it: the pre-match percentages and
+    both sides' form and table place before and after.
+
+    Wins only. A draw is the least likely outcome of every pairing here - it
+    comes out at 13-19% whichever two sides meet - so by probability alone almost
+    every matchday's surprise would be a 1:1: dropped points, but not a story.
+    """
+    probs = {}
+    for r, diff in walk_forward(rows):
+        if int(r["matchday"]) == matchday:
+            probs[r["match_id"]] = probabilities(diff, calibration())
+    if not probs:
+        return ('<div class="card surprise"><p class="none">Noch keine Prognose – dafür braucht '
+                'es zwei gespielte Spieltage.</p></div>')
+
+    best = None
+    for r in rows:
+        if int(r["matchday"]) != matchday or r["match_id"] not in probs:
+            continue
+        hg, ag = int(r["home_goals"]), int(r["away_goals"])
+        if hg == ag:
+            continue
+        p_win = probs[r["match_id"]][2 if hg > ag else 0]
+        if p_win < SURPRISE_MAX_P and (best is None or p_win < best[1]):
+            best = (r, p_win)
+    if best is None:
+        return ('<div class="card surprise"><p class="none">Diesen Spieltag keine – jeder Sieg '
+                'hatte vorher mindestens eine Chance von eins zu vier.</p></div>')
+
+    r, p_win = best
+    p_away, p_draw, p_home = probs[r["match_id"]]
+    home_won = int(r["home_goals"]) > int(r["away_goals"])
+    winner = r["home_team"] if home_won else r["away_team"]
+
+    # Form and table place as they stood before this matchday, against where
+    # they are now - the first says why it was a surprise, the second what it
+    # did. Form as the number, not the rank: a bottom side stays fourteenth
+    # after its upset, but its form moves, and that is the point.
+    before, _ = build_table([x for x in rows if int(x["matchday"]) < matchday])
+    ranks = {}
+    for tab, key in ((before, "pre"), (table, "post")):
+        for t in tab:
+            ranks.setdefault(t["team"], {})[key] = (t["form"], t["position"])
+
+    sides = "".join(
+        f'<div class="fxt{" win" if r[side] == winner else ""}">{crest_img(logos, r[side])}'
+        f'<span>{html.escape(r[side])}</span></div>' for side in ("home_team", "away_team")
+    )
+    bar = "".join(f'<i class="{cls}" style="width:{p:.1%}"></i>'
+                  for cls, p in (("w", p_home), ("d", p_draw), ("l", p_away)))
+    pcts = " · ".join(
+        f'<b>{label} {pct(p)}</b>' if won else f'{label} {pct(p)}'
+        for label, p, won in (("Heim", p_home, home_won), ("Remis", p_draw, False),
+                              ("Auswärts", p_away, not home_won))
+    )
+    facts = []
+    for side in ("home_team", "away_team"):
+        team = r[side]
+        (f0, t0), (f1, t1) = ranks[team]["pre"], ranks[team]["post"]
+        facts.append(
+            f'<tr><td class="l">{html.escape(team)}</td>'
+            f'<td>{num(f0)} <span class="to">→ {num(f1)}</span></td>'
+            f'<td>{t0}. <span class="to">→ {t1}.</span></td></tr>'
+        )
+    n = sum(1 for x in rows if int(x["matchday"]) == matchday)
+    return f"""<div class="card surprise">
+          <div class="smatch">{sides}<b class="score">{r["home_goals"]}:{r["away_goals"]}</b></div>
+          <div class="bar">{bar}</div>
+          <p class="sprob">Vorher: {pcts}</p>
+          <table class="sfacts">
+            <thead><tr><th class="l">Vorher → jetzt</th><th>Form</th><th>Tabelle</th></tr></thead>
+            <tbody>{"".join(facts)}</tbody>
+          </table>
+          <p class="hint">{html.escape(winner)} gewinnt mit einer Chance von {pct(p_win)} vorher –
+          von den {n} Spielen des Spieltags der Sieg, den das Modell am wenigsten erwartet hat.</p>
+        </div>"""
+
+
+def surface_section(surface):
+    """The pitch table: goals per match and the home bonus per surface, over
+    every season on file. Empty string without detail data (a fresh clone)."""
+    if not surface.get("alle"):
+        return ""
+    order = ("Rasen", "Kunstrasen", "Hartplatz")
+    top = max(s["home_bonus"] for s in surface.values())
+    body = []
+    for key in [k for k in order if k in surface] + ["alle"]:
+        s = surface[key]
+        label = "Liga gesamt" if key == "alle" else key
+        width = max(s["home_bonus"], 0) / top if top > 0 else 0
+        body.append(
+            f'<tr class="{"total" if key == "alle" else ""}">'
+            f'<td class="l">{label}<span class="n">{s["n"]} Spiele</span></td>'
+            f'<td>{num(s["goals"], 2)}</td>'
+            f'<td class="hb"><b>{signed(round(s["home_bonus"]))}</b>'
+            f'<span class="hbar"><i style="width:{width:.0%}"></i></span></td></tr>'
+        )
+    grass = round(surface["Rasen"]["home_bonus"]) if "Rasen" in surface else round(surface["alle"]["home_bonus"])
+    return f"""<h3>Belag</h3>
+        <div class="card">
+          <table class="sfacts belag">
+            <thead><tr><th class="l">Platz</th><th>Tore/Spiel</th><th>Heimbonus</th></tr></thead>
+            <tbody>{"".join(body)}</tbody>
+          </table>
+        </div>
+        <p class="hint"><strong>Heimbonus</strong> ist, um wie viele Prozentpunkte der Gastgeber
+        besser abschneidet, als die Stärke beider Teams erwarten lässt – +{grass} auf Rasen heißt
+        {grass} Siege mehr aus hundert Heimspielen, über alle Saisons gerechnet und bei dieser
+        Datenmenge ein Hinweis, kein Beweis.</p>"""
+
+
+def comeback_section(marks, first, logos):
+    """Two marked teams by a fixed rule with a floor, and the league's own
+    first-goal rates underneath so a reader can tell how rare a comeback is."""
+    if not first["n"]:
+        return ""
+    lines = []
+    for key, label, pts, n, noun in (
+        ("comeback", "Comeback-Team", "pts_after_trailing", "trailed", "Spielen mit Rückstand"),
+        ("dropped", "Führung verspielt", "pts_dropped_leading", "led", "Führungen liegen gelassen"),
+    ):
+        if marks[key] is None:
+            lines.append(f'<div class="cb"><span class="badge">{label}</span>'
+                         f'<p class="none">diesen Spieltag keines</p></div>')
+            continue
+        team, t = marks[key]
+        extra = ""
+        if key == "dropped" and t["lost_after_leading"]:
+            extra = f', {t["lost_after_leading"]} davon noch verloren'
+        if key == "comeback" and t["won_after_trailing"]:
+            extra = f', {t["won_after_trailing"]} davon noch gewonnen'
+        lines.append(
+            f'<div class="cb"><span class="badge">{label}</span>'
+            f'<div class="fxt">{crest_img(logos, team)}<span>{html.escape(team)}</span></div>'
+            f'<p><b>{t[pts]} Punkte</b> aus {t[n]} {noun}{extra}.</p></div>'
+        )
+    n = first["n"]
+    bar = "".join(f'<i class="{cls}" style="width:{first[k] / n:.1%}"></i>'
+                  for cls, k in (("w", "win"), ("d", "draw"), ("l", "loss")))
+    return f"""<h3>Rückstand und Führung</h3>
+        <div class="card cbs">
+          {"".join(lines)}
+          <div class="first"><p>Wer das erste Tor schießt, gewinnt <b>{pct(first["win"] / n)}</b> der
+          Spiele, {pct(first["draw"] / n)} enden remis, {pct(first["loss"] / n)} gehen noch
+          verloren.</p><div class="bar">{bar}</div></div>
+        </div>
+        <p class="hint">Nur diese Saison, aus den Torminuten: die meisten Punkte aus Spielen mit
+        Rückstand und die meisten aus eigener Führung liegen gelassenen, beides erst ab vier
+        Punkten.</p>"""
+
+
 def team_stats_by_venue(rows, team):
     """Record (W-D-L) for a team, split by home and away."""
     home = {"w": 0, "d": 0, "l": 0}
@@ -720,31 +879,35 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
                 score = f"{hg}:{ag}"
                 outcome = outcome_of(hg, ag)
 
-                # Find match in walk_forward results to get probability
+                # The column always shows the same thing - this team's chance of
+                # winning, as the model saw it before kick-off - so a reader can
+                # compare rows. The surprise note marks a win the model gave
+                # less than a one-in-four chance - the rule of the matchday card.
                 prob_txt = "–"
+                surprise_badge = ""
                 for idx, (wf_r, _) in enumerate(walk_forward(rows)):
                     if (wf_r["date"] == r["date"] and
                         wf_r["home_team"] == r["home_team"] and
                         wf_r["away_team"] == r["away_team"]):
                         if idx in match_probs:
                             p = match_probs[idx]
-                            outcome_prob = p[outcome]
-                            if outcome_prob < 0.25:
-                                prob_txt = f'Sieg {pct(p[2] if is_home else p[0])}'
+                            prob_txt = pct(p[2] if is_home else p[0])
+                            if hg != ag and p[outcome] < SURPRISE_MAX_P:
                                 surprise_badge = '<span class="badge">Überraschung</span>'
-                            else:
-                                prob_txt = pct(outcome_prob)
-                                surprise_badge = ""
                         break
-                else:
-                    surprise_badge = ""
+
+                # Read from this team's side: 2:1 away is a loss, and the reader
+                # should not have to work that out from the H/A marker.
+                team_goals, opp_goals = (hg, ag) if is_home else (ag, hg)
+                res = "w" if team_goals > opp_goals else ("d" if team_goals == opp_goals else "l")
+                res_letter = {"w": "S", "d": "U", "l": "N"}[res]
 
                 opp_side = "H" if is_home else "A"
                 results.append(
                     f'<tr><td class="md">{r["matchday"]}</td>'
                     f'<td class="dt">{short_date(r["date"])}</td>'
                     f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span></td>'
-                    f'<td class="sc">{score}</td>'
+                    f'<td class="sc"><span class="res {res}">{res_letter}</span>{score}</td>'
                     f'<td class="pr">{prob_txt}{surprise_badge}</td></tr>'
                 )
 
@@ -752,13 +915,19 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
           {"".join(results)}
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
 """
 
         # Remaining fixtures
@@ -1029,33 +1198,21 @@ def render(season, rows):
     generated = date.today().strftime("%d.%m.%Y")
 
     top_team, bottom_team = table[0], table[-1]
-    # The team the table is most wrong about right now - the whole reason the
-    # page exists, so it opens the page as a sentence rather than sitting in a
-    # box in the corner. Worded as two readings of the same season, never as a
-    # claim about next week.
-    out_rank, out = max(enumerate(table), key=lambda p: abs(p[1]["position"] - (p[0] + 1)))
-    out_diff = out["position"] - (out_rank + 1)
-    plural = "Platz" if abs(out_diff) == 1 else "Plätze"
-    if out_diff == 0:
-        lede_pre = "Diese Woche sind sich beide einig:"
-        lede_who = "Form und Tabelle"
-        lede_post = "Kein Team steht in dieser Formtabelle anders als in der offiziellen."
-    else:
-        lede_pre = f"Die Tabelle sagt Platz {out['position']}."
-        lede_who = html.escape(out["team"])
-        nur = "" if out_diff > 0 else "nur "
-        richtung = "besser" if out_diff > 0 else "schlechter"
-        lede_post = (f"Die letzten fünf Spieltage sagen {nur}Platz {out_rank + 1} – "
-                     f"{abs(out_diff)} {plural} {richtung}, als die Tabelle vermuten lässt.")
 
     # Two markers on the table, each by a fixed rule so a reader can check them
     # against the row they sit on. Both have a floor: one place of difference or
     # a form change of half a point is well inside the noise this page keeps
     # warning about, and a badge would sell it as a story.
-    # Not `out` above: that is the largest gap in either direction, and the badge
-    # only ever marks a team playing above its table place.
+    # The badge only ever marks a team playing above its table place.
     best_gap, hot_rank = max((t["position"] - (rank + 1), rank) for rank, t in enumerate(table))
     hot_rank = hot_rank if best_gap >= 2 else None
+    # The same team, and the same chip, in the head - so the third fact up there
+    # and the badge down in the table can never disagree.
+    if hot_rank is None:
+        hot_fact = '<span class="t none">diesen Spieltag keine</span>'
+    else:
+        hot_fact = (f'<span class="t">{html.escape(table[hot_rank]["team"])}</span>'
+                    f'<span class="chip up">+{best_gap}</span>')
     jumps = [(t["delta"], rank) for rank, t in enumerate(table) if t["delta"] is not None]
     best_delta, best_rank = max(jumps, default=(0, None))
     jump_rank = best_rank if best_delta >= 1.5 and best_rank != hot_rank else None
@@ -1163,6 +1320,32 @@ def render(season, rows):
             f"</tr>"
         )
 
+    # The right column: on the current season the matchday's surprise, on an
+    # archive page the form chart - a finished season has no "this weekend",
+    # and its forecast calibration (the season before it) is not loaded.
+    if season == SEASON_CURRENT:
+        side_section = f"""<h2>Überraschung des Spieltags</h2>
+        <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
+        Unentschieden zählen nicht – die sind hier in jeder Paarung die unwahrscheinlichste
+        Variante.</p>
+        {surprise_card(rows, table, matchday, logos)}
+        <p class="hint">Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu
+        diesem Spieltag; unter 25&nbsp;% gilt als Überraschung, <strong>Form</strong> und
+        <strong>Tabelle</strong> stehen vor und nach dem Spieltag.</p>"""
+        # Two more cards from the match detail pages, both absent on a clone
+        # without data/details.csv rather than rendered empty.
+        surface, marks, first = page_data(season)
+        side_section += f"""
+        {surface_section(surface)}
+        {comeback_section(marks, first, logos)}"""
+    else:
+        side_section = f"""<h2>Formverlauf</h2>
+        <p class="sub">Die Form an jedem Spieltag, also immer das Fenster der fünf davor.
+        Diese Linien springen – das ist gewollt, sie zeigen Phasen und keine Bilanz.</p>
+        <div class="card chart">{svg_chart(table, matchdays, "fseries", "form")}</div>
+        <p class="hint">X-Achse: Spieltag, Y-Achse: Form. Eine Zeile in der Tabelle antippen
+        hebt das Team hier und in der Aufstellung hervor.</p>"""
+
     # Only render Rest column header when there are scheduled fixtures
     rest_header = '<th class="s-hide">Rest</th>' if has_future else ""
     rest_legend = ('<strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, ohne '
@@ -1267,26 +1450,19 @@ def render(season, rows):
   .seasons span {{ color:var(--ink); font-weight:600; }}
   .seasons a {{ color:inherit; }}
 
-  /* The claim the official table cannot make, stated as a sentence. It is the
-     reason the page exists, so it opens the page. The two league extremes sit
-     beside it rather than under it - stacked, the head ran half a screen tall
-     before the ranking itself came into view. */
-  .lede {{ display:flex; flex-wrap:wrap; align-items:flex-end;
-           justify-content:space-between; gap:18px 52px; padding:18px 0 20px; }}
-  .claim {{ flex:1 1 460px; }}
-  .claim p {{ margin:0; max-width:46ch; font-size:clamp(15.5px,1.2vw,17px);
-              color:var(--muted); }}
-  /* The name is the subject of the sentence, not a second wordmark: a clear
-     step below the h1, so the page still has one title. */
-  .claim .who {{ font:700 clamp(22px,2.3vw,30px)/1.1 var(--display);
-                 color:var(--ink); margin:3px 0 3px; }}
-
-  .facts {{ flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }}
-  .fact {{ display:flex; align-items:baseline; gap:9px; margin:0; }}
-  .fact .k {{ color:var(--muted); font-size:14.5px; }}
-  .fact .t {{ font-weight:600; }}
+  /* Three facts of equal weight in one row: the two ends of the form table and
+     the team the table is most wrong about. Same size, same build, so none of
+     them reads as a title over the others. */
+  .facts {{ display:flex; flex-wrap:wrap; gap:14px 48px; padding:20px 0 22px; }}
+  /* Label on the first line, name and value side by side on the second. */
+  .fact {{ display:grid; grid-template-columns:auto auto; justify-content:start;
+           align-items:baseline; column-gap:9px; row-gap:3px; margin:0; }}
+  .fact .k {{ grid-column:1 / -1; color:var(--muted); font-size:14.5px; }}
+  .fact .t {{ font-weight:600; font-size:17px; }}
+  .fact .t.none {{ font-weight:400; color:var(--muted); }}
   .fact .n {{ font:700 21px var(--display); font-variant-numeric:tabular-nums; }}
   .fact .n.pos {{ color:var(--up); }} .fact .n.neg {{ color:var(--down); }}
+  .fact .chip {{ margin-left:0; font-size:14px; padding:2px 8px; }}
 
   /* ---- Body -------------------------------------------------------------- */
   main {{ padding:0 0 60px; }}
@@ -1506,6 +1682,50 @@ def render(season, rows):
   /* The season score is context, not the headline: same column width, quieter. */
   td.season {{ color:var(--muted); font-weight:600; }}
 
+  /* ---- Surprise of the matchday ------------------------------------------- */
+  /* One result set like a line of the forecast table: both clubs, the score in
+     the display face, the pre-match percentages as the same three-colour bar. */
+  .surprise {{ padding:16px 18px; }}
+  .surprise .none {{ margin:0; color:var(--muted); }}
+  .smatch {{ display:grid; grid-template-columns:1fr auto; align-items:center;
+             column-gap:16px; }}
+  .smatch .fxt {{ grid-column:1; }}
+  .smatch .fxt.win span {{ color:var(--up); }}
+  .smatch .score {{ grid-column:2; grid-row:1 / span 2; font:700 34px var(--display);
+                    font-variant-numeric:tabular-nums; }}
+  .surprise .bar {{ max-width:none; margin-top:12px; }}
+  .sprob {{ margin:6px 0 0; color:var(--muted); font-size:14px; }}
+  .sprob b {{ color:var(--ink); }}
+  .sfacts {{ margin-top:12px; }}
+  .sfacts th, .sfacts td {{ padding:6px 5px; }}
+  .sfacts td.l {{ text-align:left; font-family:var(--body); font-weight:600; }}
+  .sfacts .to {{ color:var(--muted); font-weight:400; }}
+  .surprise .hint {{ margin-top:12px; }}
+
+  /* ---- Pitch surface and comebacks, under the surprise ------------------- */
+  .chartcol h3 {{ margin:26px 0 8px; font:600 17px/1.2 var(--display); }}
+  .belag td.l .n {{ display:block; color:var(--muted); font:400 13px var(--body); }}
+  .belag tr.total > td {{ border-top:2px solid var(--ink); }}
+  /* The bonus as a number and, under it, as a length - so +19 against +7 is
+     seen before it is read. All bars share one scale, the longest is full. */
+  .belag td.hb {{ width:112px; }}
+  .belag td.hb b {{ display:block; font:700 18px var(--display); color:var(--up);
+                    font-variant-numeric:tabular-nums; }}
+  .hbar {{ display:block; height:4px; margin:3px 0 0 auto; width:72px; background:var(--track); }}
+  .hbar i {{ display:block; height:100%; background:var(--up); }}
+  .cbs {{ padding:14px 18px 16px; }}
+  /* Each marked team is one line: the handwritten note in the margin, the
+     club, then the sentence with the count. The note is out of flow as
+     everywhere else, so the row keeps the height of its text. */
+  .cb {{ position:relative; padding:6px 0 8px 142px; }}
+  .cb + .cb {{ border-top:1px solid var(--line); }}
+  .cb .badge {{ left:0; top:9px; bottom:auto; transform:rotate(-3.6deg); }}
+  .cb p {{ margin:2px 0 0; font-size:15px; }}
+  .cb p.none {{ margin:0; color:var(--muted); }}
+  .cbs .first {{ margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }}
+  .cbs .first p {{ margin:0; font-size:15px; }}
+  .cbs .first .bar {{ max-width:none; }}
+
   .hint {{ color:var(--muted); font-size:14px; line-height:1.58; margin:12px 0 0;
            max-width:66ch; }}
   /* The legend for the table sits in the chart column, not under the table it
@@ -1578,8 +1798,14 @@ def render(season, rows):
   .tres .dt {{ width:80px; color:var(--muted); }}
   .tres .opp, .tres .vs {{ font-weight:600; }}
   .tres .vs {{ color:var(--muted); font-size:12px; margin-left:3px; }}
-  .tres .sc {{ width:60px; font-weight:600; }}
+  .tres .sc {{ width:80px; font-weight:600; white-space:nowrap; }}
   .tres .pr, .tres .pw {{ color:var(--muted); width:80px; }}
+  /* Result from the team's side, in the same three colours as the form dots. */
+  .res {{ display:inline-block; width:18px; height:18px; margin-right:7px; border-radius:2px;
+          font:700 11.5px/18px var(--display); text-align:center; color:#fff; }}
+  .res.w {{ background:var(--up); }}
+  .res.d {{ background:var(--draw); color:var(--ink); }}
+  .res.l {{ background:var(--down); }}
   .tdet .badge {{ position:relative; left:auto; right:auto; transform:none; }}
 
   /* ---- Season simulation -------------------------------------------------- */
@@ -1598,11 +1824,6 @@ def render(season, rows):
   @media (min-width:1400px) {{
     /* Nine columns of table need the room more than five matchdays of chart. */
     .dash {{ grid-template-columns:minmax(0,60fr) minmax(0,40fr); gap:30px; }}
-    /* Seeing the line move is the point of clicking a row, so the chart follows
-       the table down. It now carries the legend too, so it can get taller than
-       a short window - then it scrolls in place rather than hiding its foot. */
-    .chartcol {{ position:sticky; top:18px;
-                 max-height:calc(100vh - 36px); overflow-y:auto; }}
   }}
   @media (max-width:1399px) {{
     /* Stacked: keep one comfortable measure instead of stretching to 1760px. */
@@ -1619,8 +1840,7 @@ def render(season, rows):
     .mhead {{ align-items:flex-start; }}
     .where {{ text-align:left; }}
     .seasons {{ gap:10px; font-size:13px; }}
-    .lede {{ padding:19px 0 18px; }}
-    .facts {{ gap:6px 26px; padding:13px 0 24px; }}
+    .facts {{ gap:12px 26px; padding:13px 0 24px; }}
     th, td {{ padding:9px 5px; }}
     th:first-child, td:first-child {{ padding-left:10px; }}
     th:last-child, td:last-child {{ padding-right:10px; }}
@@ -1653,6 +1873,9 @@ def render(season, rows):
     .pw b {{ font-size:20px; }}
     /* The chart scales with the viewport, so its labels need bigger user units. */
     .tick {{ font-size:19px; }}
+    /* No margin to write in on a phone: the note goes above its line instead. */
+    .cb {{ padding:34px 0 8px; }}
+    .cb .badge {{ left:4px; top:4px; }}
   }}
 </style>
 </head>
@@ -1669,20 +1892,15 @@ def render(season, rows):
       Nach <b>Spieltag {matchday}</b>, {last_date}</p>
     </div>
     {season_switcher(season)}
-    <div class="lede">
-      <div class="claim">
-        <p class="pre">{lede_pre}</p>
-        <p class="who">{lede_who}</p>
-        <p class="post">{lede_post}</p>
-      </div>
-      <div class="facts">
-        <p class="fact"><span class="k">Beste Form</span>
-        <span class="t">{html.escape(top_team["team"])}</span>
-        <span class="n pos">{num(top_team["form"])}</span></p>
-        <p class="fact"><span class="k">Schwächste Form</span>
-        <span class="t">{html.escape(bottom_team["team"])}</span>
-        <span class="n neg">{num(bottom_team["form"])}</span></p>
-      </div>
+    <div class="facts">
+      <p class="fact"><span class="k">Beste Form</span>
+      <span class="t">{html.escape(top_team["team"])}</span>
+      <span class="n pos">{num(top_team["form"])}</span></p>
+      <p class="fact"><span class="k">Schwächste Form</span>
+      <span class="t">{html.escape(bottom_team["team"])}</span>
+      <span class="n neg">{num(bottom_team["form"])}</span></p>
+      <p class="fact"><span class="k">Mannschaft der Stunde</span>
+      {hot_fact}</p>
     </div>
   </div>
 </header>
@@ -1729,12 +1947,7 @@ def render(season, rows):
 
     <div class="col chartcol">
       <section>
-        <h2>Formverlauf</h2>
-        <p class="sub">Die Form an jedem Spieltag, also immer das Fenster der fünf davor.
-        Diese Linien springen – das ist gewollt, sie zeigen Phasen und keine Bilanz.</p>
-        <div class="card chart">{svg_chart(table, matchdays, "fseries", "form")}</div>
-        <p class="hint">X-Achse: Spieltag, Y-Achse: Form. Eine Zeile in der Tabelle antippen
-        hebt das Team hier und in der Aufstellung hervor.</p>
+        {side_section}
         <p class="hint legend"><strong>Form</strong> rechnet nur die letzten fünf Spieltage, dafür
         mit Gegnerstärke und Torverhältnis: 50 ist Ligadurchschnitt, darüber heißt besser als der
         Schnitt. <strong>Saison</strong> daneben ist der Wert über alle bisherigen Spiele – wer
@@ -1770,7 +1983,8 @@ def render(season, rows):
     rows.forEach(tr => {{
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
-      const line = document.getElementById('form' + tr.dataset.rank);
+      const line = document.getElementById('form' + tr.dataset.rank);  // archive pages only
+      if (!line) return;
       line.classList.toggle('sel', on);
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     }});

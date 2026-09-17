@@ -16,6 +16,7 @@ from config import (  # noqa: E402
     SEASON_CURRENT,
     STAFFEL_IDS,
 )
+from details import collect as collect_details  # noqa: E402
 from parse import collect_season, save_matches_csv, validate  # noqa: E402
 from report import build_table, write_report  # noqa: E402
 
@@ -81,6 +82,10 @@ def main():
     matches = apply_overrides(matches, args.season)
     validate(matches, args.season)
     save_matches_csv(matches, MATCHES_CSV)
+    # Detail pages for the matches details.csv lacks - seven per matchday.
+    # --cached means no network, and the details on disk simply stay as they are.
+    if not args.cached:
+        collect_details(args.season)
 
     table = rank(args.season)
     if not table:

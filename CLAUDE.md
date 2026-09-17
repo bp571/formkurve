@@ -27,6 +27,9 @@ python src/report.py --season 2025/26  # rebuild docs/2025-26/index.html
 python src/backtest.py            # re-run the walk-forward evaluation
 python src/predict.py             # next matchday's probabilities in the terminal
 python src/explore_predictors.py  # the predictor comparison the page publishes
+python src/details.py             # match detail pages the current season lacks -> details/events.csv
+python src/details.py --season 2025/26 --cached   # re-parse saved detail pages, no network
+python src/analysis.py [--all]    # surface effect and comeback tables in the terminal
 ```
 
 After a matchday: `python run.py`, then commit and push — GitHub Pages rebuilds in about a minute.
@@ -39,11 +42,13 @@ run.py
   ├─ parse           pages -> match rows, then validate()               (raises on any gap)
   ├─ overrides       data/manual_overrides.csv wins over scraped rows
   ├─ save            upsert into data/matches.csv by match_id
+  ├─ details         two requests per new match -> data/details.csv, data/events.csv (skipped with --cached)
   ├─ rating          replay chronologically -> Elo per team
   ├─ score           shrink + normalize -> power score 0-100
   └─ report          + form over the last 5 matchdays -> docs/index.html
                      + predict     scheduled rows -> next matchday's probabilities
                      + explore_predictors  the candidate table published beside them
+                     + analysis    surface table and comeback markers from the detail files
 ```
 
 - The forecast is the one part that reads `status="scheduled"` rows; everything else ignores
@@ -54,7 +59,11 @@ run.py
 - fussball.de sheds load during a season walk (sporadic 503s). A second pass retries the refused
   matchdays; one that stays unavailable has to be filled in via `data/manual_overrides.csv`.
 - Goal counts and dates are obfuscated with per-request webfonts;
-  [src/font_decoder.py](src/font_decoder.py) maps glyphs back to characters before parsing.
+  [src/font_decoder.py](src/font_decoder.py) maps glyphs back to characters before parsing. The
+  detail pages use a second scheme for kickoff times and scorer names — one fixed IcoMoon build
+  of the same face whose glyph *names* say nothing, but whose glyph order is ASCII from the space
+  onwards, so the glyph index is the character (caps only). Substitutions use a third font
+  (Liberation Sans) and are not parsed.
 - [src/config.py](src/config.py) holds everything tunable in one place: Staffel ids, K/HFA/N0,
   `FORM_WINDOW`, team aliases, `KNOWN_TEAMS`. `rating.py`, `score.py` and `report.py` take these as
   defaults, so the backtest can override them per call.
@@ -66,8 +75,20 @@ run.py
 exactly `n_teams * (n_teams - 1)` matches, dates parseable, scores 0–20, no team playing itself,
 and for the current season the team set equal to `KNOWN_TEAMS`.
 
-Only what fussball.de publishes for amateur leagues exists: date, both teams, goal counts, matchday.
-No xG, no shots, no lineups — every metric has to be derivable from those fields alone.
+**Detail files, beside the contract and never read by the model.** [src/details.py](src/details.py)
+fetches each played match's page and its `ajax.match.course` fragment (cached in
+`data/raw/details/`) and writes `data/details.csv` (`match_id, kickoff, surface, venue, attendance,
+ht_home, ht_away`) and `data/events.csv` (`match_id, half, minute, extra, side, type, score_home,
+score_away, player_id, player, note`; `type` is `goal | yellow | yellow_red | red`, `note` is
+`Strafstoßtor` or `Eigentor`, and `side` is the side a goal counts for, so an own goal's
+`player_id` is the opponent's player). Over 216 matches every field was filled, and the goal events
+summed to `matches.csv` and to the half-time score in every match. Player names are decoded and
+kept locally for grouping only; **the page publishes aggregates, never names**. A clone without
+these files renders the page without the two cards that use them.
+
+Only what fussball.de publishes for amateur leagues exists: date, both teams, goal counts, matchday,
+and from the detail pages kickoff, ground, attendance and the goal/card timeline. No xG, no shots,
+no lineups — every metric has to be derivable from those fields alone.
 
 ## Model
 
@@ -176,6 +197,20 @@ protocol as the backtest: one ordered logistic with three parameters per candida
   candidate that is stable across shrinkage settings (2/4/8 all land at 0.223 walk-forward). Not
   significant either, but it is why `predict.py` forecasts from goals rather than from the Elo gap.
 
+Two more, measured from the detail pages (`python src/analysis.py --all`, 216 matches over both
+seasons):
+
+- **The ground does not change the match, but it may change the home advantage.** Grass and
+  artificial turf: 3.78 vs 3.79 goals a match, the same share of 0:0s and of 3+ margins. The raw
+  home win rate differs (47 % vs 62 %), but the turf clubs are the stronger ones, so the page
+  shows the *residual* — actual home score minus the Elo expectation of the pairing without HFA —
+  as **Heimbonus** in percentage points: grass +7, turf +19, league +13. That gap is ~1.6 se
+  (both seasons point the same way). **A hint, and the page says so; do not sell it as a finding.**
+  The eight cinder-pitch matches are winter stand-ins and an anecdote. No per-club venue term
+  follows from this — the split-half finding above still stands.
+- **The team scoring first wins 71 %** (2025/26, 175 matches with goals), 13 % draw, 17 % lose;
+  2026/27 so far 73/13/13. That rate is the reference the comeback markers are read against.
+
 Two methodological notes:
 
 - **RPS cannot identify `HFA`.** It enters as a constant offset that the calibration thresholds
@@ -191,14 +226,18 @@ Two methodological notes:
 build step, no image files. Form-sorted table (rank, team with its last five results, form, change
 vs. previous matchday, season power score, matches played, record, goals, goal difference, official
 table position with its distance to the form rank), a full-width pitch laying the league out by
-form, one inline-SVG progression chart for the form window — clicking a row highlights that team in
-table, pitch and chart at once — then the next matchday's forecast and the predictor table behind
-it, side by side in the same grid, and a source link.
+form, beside the table the *Überraschung des Spieltags* card, the *Belag* table (goals per match and
+Heimbonus per surface, all seasons pooled because one is too thin) and the *Rückstand und Führung*
+card — clicking a row highlights that team in table and pitch at once — then the next matchday's forecast and the predictor table behind it,
+side by side in the same grid, and a source link.
 
 Archive pages (`docs/<season>/index.html` for finished seasons) carry the dashboard only — pitch,
-form table, and chart. The forecast and simulation are absent because nothing is scheduled left to
-forecast; the page opens directly on the facts. A season switcher in the masthead links between all
-pages, both current and archive.
+form table, and in place of the surprise card the inline-SVG form chart (one line per team over the
+form window; a finished season has no "this weekend", and the calibration for its forecast is not
+loaded). The forecast and simulation are absent because nothing is scheduled left to forecast; the
+page opens directly on the facts. A season switcher in the masthead links between all pages, both
+current and archive. The chart was replaced on the current page because fourteen lines whose
+neighbouring points share four of five matches read as spaghetti.
 
 **Every explanation sits with the thing it explains.** The page carries no essay at the end: the
 legend for the form table, the notes under the forecast and the note under the predictor table are
@@ -212,13 +251,20 @@ matchdays only, restarted from 1500 at every matchday — is the headline number
 score rides alongside in a quieter **Saison** column. The chip beside the official position is now
 the distance to the *form* rank: 2025/26 ends with SC Weiler tenth in the table and third in form.
 
-**Three editorial markers, each by a fixed rule with a floor**, so a reader can check a badge
+**Six editorial markers, each by a fixed rule with a floor**, so a reader can check a badge
 against the row it sits on: *Mannschaft der Stunde* (largest positive gap from form rank to table
 position, needs ≥ 2 places), *Formsprung* (largest gain over the previous matchday, needs ≥ 1.5
 points, skipped if it would land on the same row), *Topspiel* in the forecast (best combined form of
 the two sides — deliberately **not** "closest percentages", which span a few points all season and
-would mark noise). Below their floors the badges simply do not render. They are drawn in an amber
-that no data uses, because green and wine mean above and below average everywhere else on the page.
+would mark noise), *Überraschung des Spieltags* (the win of the latest matchday with the lowest
+pre-match win probability from the page's own forecast, needs < 25 % — **wins only**, because a
+draw is the least likely outcome of every pairing here at 13–19 %, so by probability alone almost
+every matchday's surprise would be a 1:1; the same rule marks *Überraschung* in the team panels),
+*Comeback-Team* and *Führung verspielt* (most points taken from matches trailed in / most points
+given away from matches led in, current season only, needs ≥ 4 points — more than one win — ties
+to the team that needed fewer matches; both from `events.csv`, so they are counts, never rates).
+Below their floors the badges simply do not render. They are drawn in an amber that no data uses,
+because green and wine mean above and below average everywhere else on the page.
 
 Two consequences that must not be undone by accident:
 
@@ -310,9 +356,10 @@ Considered and consciously left out:
 - **Schedule difficulty ahead** — mean opponent rating of remaining fixtures, home/away adjusted. A
   site feature, not part of the score.
 - **Forfeit detection** — `status="forfeit"` exists in the schema but is never set: a Spielwertung
-  looks like an ordinary 0:2 in the schedule view, and the marker would need each match's detail
-  page (~180 extra requests per season). 0:2/2:0 results are 7% of a season and only some are
-  forfeits, so contamination is small. Revisit if a season shows unusually many.
+  looks like an ordinary 0:2 in the schedule view. The detail pages are now scraped anyway, so
+  the marker is cheap: a 0:2 or 2:0 with no goal events would be the tell. 0:2/2:0 results are 7%
+  of a season and only some are forfeits, so contamination is small. Revisit if a season shows
+  unusually many.
 - **Attack/defense split in the *ranking*** (Poisson/Dixon-Coles). A shrunk Poisson fit now drives
   the forecast, where its expected goals are the point; folding it into the ranking is a different
   claim and still needs roughly 2× the data. The lever for that is more Staffeln, not a bigger
@@ -333,6 +380,6 @@ Considered and consciously left out:
   change that calculus, a new season alone would not.
 
 **Not measurable from result data alone** — say so rather than faking it: match dominance
-independent of the scoreline (needs xG or shots), squad quality and injuries (needs lineups), red
-cards (needs match events), pitch and weather. fussball.de does not expose any of it for amateur
-leagues. Do not build proxy metrics for them.
+independent of the scoreline (needs xG or shots), squad quality and injuries (needs lineups),
+pitch condition and weather. fussball.de does not expose any of it for amateur leagues. Do not
+build proxy metrics for them. Cards and goal minutes, once on this list, are in `events.csv` now.

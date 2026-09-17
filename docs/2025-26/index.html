@@ -96,26 +96,19 @@
   .seasons span { color:var(--ink); font-weight:600; }
   .seasons a { color:inherit; }
 
-  /* The claim the official table cannot make, stated as a sentence. It is the
-     reason the page exists, so it opens the page. The two league extremes sit
-     beside it rather than under it - stacked, the head ran half a screen tall
-     before the ranking itself came into view. */
-  .lede { display:flex; flex-wrap:wrap; align-items:flex-end;
-           justify-content:space-between; gap:18px 52px; padding:18px 0 20px; }
-  .claim { flex:1 1 460px; }
-  .claim p { margin:0; max-width:46ch; font-size:clamp(15.5px,1.2vw,17px);
-              color:var(--muted); }
-  /* The name is the subject of the sentence, not a second wordmark: a clear
-     step below the h1, so the page still has one title. */
-  .claim .who { font:700 clamp(22px,2.3vw,30px)/1.1 var(--display);
-                 color:var(--ink); margin:3px 0 3px; }
-
-  .facts { flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
-  .fact { display:flex; align-items:baseline; gap:9px; margin:0; }
-  .fact .k { color:var(--muted); font-size:14.5px; }
-  .fact .t { font-weight:600; }
+  /* Three facts of equal weight in one row: the two ends of the form table and
+     the team the table is most wrong about. Same size, same build, so none of
+     them reads as a title over the others. */
+  .facts { display:flex; flex-wrap:wrap; gap:14px 48px; padding:20px 0 22px; }
+  /* Label on the first line, name and value side by side on the second. */
+  .fact { display:grid; grid-template-columns:auto auto; justify-content:start;
+           align-items:baseline; column-gap:9px; row-gap:3px; margin:0; }
+  .fact .k { grid-column:1 / -1; color:var(--muted); font-size:14.5px; }
+  .fact .t { font-weight:600; font-size:17px; }
+  .fact .t.none { font-weight:400; color:var(--muted); }
   .fact .n { font:700 21px var(--display); font-variant-numeric:tabular-nums; }
   .fact .n.pos { color:var(--up); } .fact .n.neg { color:var(--down); }
+  .fact .chip { margin-left:0; font-size:14px; padding:2px 8px; }
 
   /* ---- Body -------------------------------------------------------------- */
   main { padding:0 0 60px; }
@@ -335,6 +328,50 @@
   /* The season score is context, not the headline: same column width, quieter. */
   td.season { color:var(--muted); font-weight:600; }
 
+  /* ---- Surprise of the matchday ------------------------------------------- */
+  /* One result set like a line of the forecast table: both clubs, the score in
+     the display face, the pre-match percentages as the same three-colour bar. */
+  .surprise { padding:16px 18px; }
+  .surprise .none { margin:0; color:var(--muted); }
+  .smatch { display:grid; grid-template-columns:1fr auto; align-items:center;
+             column-gap:16px; }
+  .smatch .fxt { grid-column:1; }
+  .smatch .fxt.win span { color:var(--up); }
+  .smatch .score { grid-column:2; grid-row:1 / span 2; font:700 34px var(--display);
+                    font-variant-numeric:tabular-nums; }
+  .surprise .bar { max-width:none; margin-top:12px; }
+  .sprob { margin:6px 0 0; color:var(--muted); font-size:14px; }
+  .sprob b { color:var(--ink); }
+  .sfacts { margin-top:12px; }
+  .sfacts th, .sfacts td { padding:6px 5px; }
+  .sfacts td.l { text-align:left; font-family:var(--body); font-weight:600; }
+  .sfacts .to { color:var(--muted); font-weight:400; }
+  .surprise .hint { margin-top:12px; }
+
+  /* ---- Pitch surface and comebacks, under the surprise ------------------- */
+  .chartcol h3 { margin:26px 0 8px; font:600 17px/1.2 var(--display); }
+  .belag td.l .n { display:block; color:var(--muted); font:400 13px var(--body); }
+  .belag tr.total > td { border-top:2px solid var(--ink); }
+  /* The bonus as a number and, under it, as a length - so +19 against +7 is
+     seen before it is read. All bars share one scale, the longest is full. */
+  .belag td.hb { width:112px; }
+  .belag td.hb b { display:block; font:700 18px var(--display); color:var(--up);
+                    font-variant-numeric:tabular-nums; }
+  .hbar { display:block; height:4px; margin:3px 0 0 auto; width:72px; background:var(--track); }
+  .hbar i { display:block; height:100%; background:var(--up); }
+  .cbs { padding:14px 18px 16px; }
+  /* Each marked team is one line: the handwritten note in the margin, the
+     club, then the sentence with the count. The note is out of flow as
+     everywhere else, so the row keeps the height of its text. */
+  .cb { position:relative; padding:6px 0 8px 142px; }
+  .cb + .cb { border-top:1px solid var(--line); }
+  .cb .badge { left:0; top:9px; bottom:auto; transform:rotate(-3.6deg); }
+  .cb p { margin:2px 0 0; font-size:15px; }
+  .cb p.none { margin:0; color:var(--muted); }
+  .cbs .first { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .cbs .first p { margin:0; font-size:15px; }
+  .cbs .first .bar { max-width:none; }
+
   .hint { color:var(--muted); font-size:14px; line-height:1.58; margin:12px 0 0;
            max-width:66ch; }
   /* The legend for the table sits in the chart column, not under the table it
@@ -407,8 +444,14 @@
   .tres .dt { width:80px; color:var(--muted); }
   .tres .opp, .tres .vs { font-weight:600; }
   .tres .vs { color:var(--muted); font-size:12px; margin-left:3px; }
-  .tres .sc { width:60px; font-weight:600; }
+  .tres .sc { width:80px; font-weight:600; white-space:nowrap; }
   .tres .pr, .tres .pw { color:var(--muted); width:80px; }
+  /* Result from the team's side, in the same three colours as the form dots. */
+  .res { display:inline-block; width:18px; height:18px; margin-right:7px; border-radius:2px;
+          font:700 11.5px/18px var(--display); text-align:center; color:#fff; }
+  .res.w { background:var(--up); }
+  .res.d { background:var(--draw); color:var(--ink); }
+  .res.l { background:var(--down); }
   .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
 
   /* ---- Season simulation -------------------------------------------------- */
@@ -427,11 +470,6 @@
   @media (min-width:1400px) {
     /* Nine columns of table need the room more than five matchdays of chart. */
     .dash { grid-template-columns:minmax(0,60fr) minmax(0,40fr); gap:30px; }
-    /* Seeing the line move is the point of clicking a row, so the chart follows
-       the table down. It now carries the legend too, so it can get taller than
-       a short window - then it scrolls in place rather than hiding its foot. */
-    .chartcol { position:sticky; top:18px;
-                 max-height:calc(100vh - 36px); overflow-y:auto; }
   }
   @media (max-width:1399px) {
     /* Stacked: keep one comfortable measure instead of stretching to 1760px. */
@@ -448,8 +486,7 @@
     .mhead { align-items:flex-start; }
     .where { text-align:left; }
     .seasons { gap:10px; font-size:13px; }
-    .lede { padding:19px 0 18px; }
-    .facts { gap:6px 26px; padding:13px 0 24px; }
+    .facts { gap:12px 26px; padding:13px 0 24px; }
     th, td { padding:9px 5px; }
     th:first-child, td:first-child { padding-left:10px; }
     th:last-child, td:last-child { padding-right:10px; }
@@ -482,6 +519,9 @@
     .pw b { font-size:20px; }
     /* The chart scales with the viewport, so its labels need bigger user units. */
     .tick { font-size:19px; }
+    /* No margin to write in on a phone: the note goes above its line instead. */
+    .cb { padding:34px 0 8px; }
+    .cb .badge { left:4px; top:4px; }
   }
 </style>
 </head>
@@ -498,20 +538,15 @@
       Nach <b>Spieltag 26</b>, 23.05.2026</p>
     </div>
     <nav class="seasons"><a href="../">2026/27</a><span>2025/26</span></nav>
-    <div class="lede">
-      <div class="claim">
-        <p class="pre">Die Tabelle sagt Platz 10.</p>
-        <p class="who">SC Weiler</p>
-        <p class="post">Die letzten fünf Spieltage sagen Platz 3 – 7 Plätze besser, als die Tabelle vermuten lässt.</p>
-      </div>
-      <div class="facts">
-        <p class="fact"><span class="k">Beste Form</span>
-        <span class="t">SV Blau-Weiß Binningen</span>
-        <span class="n pos">65,5</span></p>
-        <p class="fact"><span class="k">Schwächste Form</span>
-        <span class="t">SG Dickenschied</span>
-        <span class="n neg">29,4</span></p>
-      </div>
+    <div class="facts">
+      <p class="fact"><span class="k">Beste Form</span>
+      <span class="t">SV Blau-Weiß Binningen</span>
+      <span class="n pos">65,5</span></p>
+      <p class="fact"><span class="k">Schwächste Form</span>
+      <span class="t">SG Dickenschied</span>
+      <span class="n neg">29,4</span></p>
+      <p class="fact"><span class="k">Mannschaft der Stunde</span>
+      <span class="t">SC Weiler</span><span class="chip up">+7</span></p>
     </div>
   </div>
 </header>
@@ -694,7 +729,7 @@
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
-    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 11.09.2026</p>
+    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 17.09.2026</p>
   </footer>
 </main>
 <script>
@@ -708,7 +743,8 @@
     rows.forEach(tr => {
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
-      const line = document.getElementById('form' + tr.dataset.rank);
+      const line = document.getElementById('form' + tr.dataset.rank);  // archive pages only
+      if (!line) return;
       line.classList.toggle('sel', on);
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     });

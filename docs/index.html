@@ -96,26 +96,19 @@
   .seasons span { color:var(--ink); font-weight:600; }
   .seasons a { color:inherit; }
 
-  /* The claim the official table cannot make, stated as a sentence. It is the
-     reason the page exists, so it opens the page. The two league extremes sit
-     beside it rather than under it - stacked, the head ran half a screen tall
-     before the ranking itself came into view. */
-  .lede { display:flex; flex-wrap:wrap; align-items:flex-end;
-           justify-content:space-between; gap:18px 52px; padding:18px 0 20px; }
-  .claim { flex:1 1 460px; }
-  .claim p { margin:0; max-width:46ch; font-size:clamp(15.5px,1.2vw,17px);
-              color:var(--muted); }
-  /* The name is the subject of the sentence, not a second wordmark: a clear
-     step below the h1, so the page still has one title. */
-  .claim .who { font:700 clamp(22px,2.3vw,30px)/1.1 var(--display);
-                 color:var(--ink); margin:3px 0 3px; }
-
-  .facts { flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
-  .fact { display:flex; align-items:baseline; gap:9px; margin:0; }
-  .fact .k { color:var(--muted); font-size:14.5px; }
-  .fact .t { font-weight:600; }
+  /* Three facts of equal weight in one row: the two ends of the form table and
+     the team the table is most wrong about. Same size, same build, so none of
+     them reads as a title over the others. */
+  .facts { display:flex; flex-wrap:wrap; gap:14px 48px; padding:20px 0 22px; }
+  /* Label on the first line, name and value side by side on the second. */
+  .fact { display:grid; grid-template-columns:auto auto; justify-content:start;
+           align-items:baseline; column-gap:9px; row-gap:3px; margin:0; }
+  .fact .k { grid-column:1 / -1; color:var(--muted); font-size:14.5px; }
+  .fact .t { font-weight:600; font-size:17px; }
+  .fact .t.none { font-weight:400; color:var(--muted); }
   .fact .n { font:700 21px var(--display); font-variant-numeric:tabular-nums; }
   .fact .n.pos { color:var(--up); } .fact .n.neg { color:var(--down); }
+  .fact .chip { margin-left:0; font-size:14px; padding:2px 8px; }
 
   /* ---- Body -------------------------------------------------------------- */
   main { padding:0 0 60px; }
@@ -335,6 +328,50 @@
   /* The season score is context, not the headline: same column width, quieter. */
   td.season { color:var(--muted); font-weight:600; }
 
+  /* ---- Surprise of the matchday ------------------------------------------- */
+  /* One result set like a line of the forecast table: both clubs, the score in
+     the display face, the pre-match percentages as the same three-colour bar. */
+  .surprise { padding:16px 18px; }
+  .surprise .none { margin:0; color:var(--muted); }
+  .smatch { display:grid; grid-template-columns:1fr auto; align-items:center;
+             column-gap:16px; }
+  .smatch .fxt { grid-column:1; }
+  .smatch .fxt.win span { color:var(--up); }
+  .smatch .score { grid-column:2; grid-row:1 / span 2; font:700 34px var(--display);
+                    font-variant-numeric:tabular-nums; }
+  .surprise .bar { max-width:none; margin-top:12px; }
+  .sprob { margin:6px 0 0; color:var(--muted); font-size:14px; }
+  .sprob b { color:var(--ink); }
+  .sfacts { margin-top:12px; }
+  .sfacts th, .sfacts td { padding:6px 5px; }
+  .sfacts td.l { text-align:left; font-family:var(--body); font-weight:600; }
+  .sfacts .to { color:var(--muted); font-weight:400; }
+  .surprise .hint { margin-top:12px; }
+
+  /* ---- Pitch surface and comebacks, under the surprise ------------------- */
+  .chartcol h3 { margin:26px 0 8px; font:600 17px/1.2 var(--display); }
+  .belag td.l .n { display:block; color:var(--muted); font:400 13px var(--body); }
+  .belag tr.total > td { border-top:2px solid var(--ink); }
+  /* The bonus as a number and, under it, as a length - so +19 against +7 is
+     seen before it is read. All bars share one scale, the longest is full. */
+  .belag td.hb { width:112px; }
+  .belag td.hb b { display:block; font:700 18px var(--display); color:var(--up);
+                    font-variant-numeric:tabular-nums; }
+  .hbar { display:block; height:4px; margin:3px 0 0 auto; width:72px; background:var(--track); }
+  .hbar i { display:block; height:100%; background:var(--up); }
+  .cbs { padding:14px 18px 16px; }
+  /* Each marked team is one line: the handwritten note in the margin, the
+     club, then the sentence with the count. The note is out of flow as
+     everywhere else, so the row keeps the height of its text. */
+  .cb { position:relative; padding:6px 0 8px 142px; }
+  .cb + .cb { border-top:1px solid var(--line); }
+  .cb .badge { left:0; top:9px; bottom:auto; transform:rotate(-3.6deg); }
+  .cb p { margin:2px 0 0; font-size:15px; }
+  .cb p.none { margin:0; color:var(--muted); }
+  .cbs .first { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .cbs .first p { margin:0; font-size:15px; }
+  .cbs .first .bar { max-width:none; }
+
   .hint { color:var(--muted); font-size:14px; line-height:1.58; margin:12px 0 0;
            max-width:66ch; }
   /* The legend for the table sits in the chart column, not under the table it
@@ -407,8 +444,14 @@
   .tres .dt { width:80px; color:var(--muted); }
   .tres .opp, .tres .vs { font-weight:600; }
   .tres .vs { color:var(--muted); font-size:12px; margin-left:3px; }
-  .tres .sc { width:60px; font-weight:600; }
+  .tres .sc { width:80px; font-weight:600; white-space:nowrap; }
   .tres .pr, .tres .pw { color:var(--muted); width:80px; }
+  /* Result from the team's side, in the same three colours as the form dots. */
+  .res { display:inline-block; width:18px; height:18px; margin-right:7px; border-radius:2px;
+          font:700 11.5px/18px var(--display); text-align:center; color:#fff; }
+  .res.w { background:var(--up); }
+  .res.d { background:var(--draw); color:var(--ink); }
+  .res.l { background:var(--down); }
   .tdet .badge { position:relative; left:auto; right:auto; transform:none; }
 
   /* ---- Season simulation -------------------------------------------------- */
@@ -427,11 +470,6 @@
   @media (min-width:1400px) {
     /* Nine columns of table need the room more than five matchdays of chart. */
     .dash { grid-template-columns:minmax(0,60fr) minmax(0,40fr); gap:30px; }
-    /* Seeing the line move is the point of clicking a row, so the chart follows
-       the table down. It now carries the legend too, so it can get taller than
-       a short window - then it scrolls in place rather than hiding its foot. */
-    .chartcol { position:sticky; top:18px;
-                 max-height:calc(100vh - 36px); overflow-y:auto; }
   }
   @media (max-width:1399px) {
     /* Stacked: keep one comfortable measure instead of stretching to 1760px. */
@@ -448,8 +486,7 @@
     .mhead { align-items:flex-start; }
     .where { text-align:left; }
     .seasons { gap:10px; font-size:13px; }
-    .lede { padding:19px 0 18px; }
-    .facts { gap:6px 26px; padding:13px 0 24px; }
+    .facts { gap:12px 26px; padding:13px 0 24px; }
     th, td { padding:9px 5px; }
     th:first-child, td:first-child { padding-left:10px; }
     th:last-child, td:last-child { padding-right:10px; }
@@ -482,6 +519,9 @@
     .pw b { font-size:20px; }
     /* The chart scales with the viewport, so its labels need bigger user units. */
     .tick { font-size:19px; }
+    /* No margin to write in on a phone: the note goes above its line instead. */
+    .cb { padding:34px 0 8px; }
+    .cb .badge { left:4px; top:4px; }
   }
 </style>
 </head>
@@ -498,20 +538,15 @@
       Nach <b>Spieltag 5</b>, 06.09.2026</p>
     </div>
     <nav class="seasons"><span>2026/27</span><a href="2025-26/">2025/26</a></nav>
-    <div class="lede">
-      <div class="claim">
-        <p class="pre">Die Tabelle sagt Platz 9.</p>
-        <p class="who">SG Vorderhunsrück Sabershausen</p>
-        <p class="post">Die letzten fünf Spieltage sagen Platz 6 – 3 Plätze besser, als die Tabelle vermuten lässt.</p>
-      </div>
-      <div class="facts">
-        <p class="fact"><span class="k">Beste Form</span>
-        <span class="t">SV Strimmig</span>
-        <span class="n pos">68,3</span></p>
-        <p class="fact"><span class="k">Schwächste Form</span>
-        <span class="t">SG Dickenschied</span>
-        <span class="n neg">37,6</span></p>
-      </div>
+    <div class="facts">
+      <p class="fact"><span class="k">Beste Form</span>
+      <span class="t">SV Strimmig</span>
+      <span class="n pos">68,3</span></p>
+      <p class="fact"><span class="k">Schwächste Form</span>
+      <span class="t">SG Dickenschied</span>
+      <span class="n neg">37,6</span></p>
+      <p class="fact"><span class="k">Mannschaft der Stunde</span>
+      <span class="t">SG Vorderhunsrück Sabershausen</span><span class="chip up">+3</span></p>
     </div>
   </div>
 </header>
@@ -601,38 +636,45 @@
 
     <div class="col chartcol">
       <section>
-        <h2>Formverlauf</h2>
-        <p class="sub">Die Form an jedem Spieltag, also immer das Fenster der fünf davor.
-        Diese Linien springen – das ist gewollt, sie zeigen Phasen und keine Bilanz.</p>
-        <div class="card chart"><svg viewBox="0 0 900 400" role="img" aria-label="Formverlauf je Spieltag">
-<rect class="zone pos" x="44" y="18" width="822" height="173.0"/><rect class="zone neg" x="44" y="191.0" width="822" height="173.0"/>
-<line class="grid" x1="44" y1="364.0" x2="866" y2="364.0"/><text class="tick" x="36" y="368.0" text-anchor="end">30</text>
-<line class="grid" x1="44" y1="277.5" x2="866" y2="277.5"/><text class="tick" x="36" y="281.5" text-anchor="end">40</text>
-<line class="grid" x1="44" y1="191.0" x2="866" y2="191.0"/><text class="tick" x="36" y="195.0" text-anchor="end">50</text>
-<line class="grid" x1="44" y1="104.5" x2="866" y2="104.5"/><text class="tick" x="36" y="108.5" text-anchor="end">60</text>
-<line class="grid" x1="44" y1="18.0" x2="866" y2="18.0"/><text class="tick" x="36" y="22.0" text-anchor="end">70</text>
-<text class="tick" x="44.0" y="387" text-anchor="middle">1</text>
-<text class="tick" x="249.5" y="387" text-anchor="middle">2</text>
-<text class="tick" x="455.0" y="387" text-anchor="middle">3</text>
-<text class="tick" x="660.5" y="387" text-anchor="middle">4</text>
-<text class="tick" x="866.0" y="387" text-anchor="middle">5</text>
-<g class="line" id="form0" style="--c:#1b6ca8"><polyline points="44.0,184.5 249.5,156.6 455.0,114.2 660.5,94.0 866.0,33.1"/><circle cx="44.0" cy="184.5" r="3.2"/><circle cx="249.5" cy="156.6" r="3.2"/><circle cx="455.0" cy="114.2" r="3.2"/><circle cx="660.5" cy="94.0" r="3.2"/><circle cx="866.0" cy="33.1" r="3.2"/><g class="end"><circle class="pos" cx="866.0" cy="33.1" r="13"/><text x="866.0" y="37.7">1</text></g></g>
-<g class="line" id="form1" style="--c:#9c2f4a"><polyline points="44.0,121.7 249.5,94.6 455.0,89.3 660.5,38.7 866.0,48.4"/><circle cx="44.0" cy="121.7" r="3.2"/><circle cx="249.5" cy="94.6" r="3.2"/><circle cx="455.0" cy="89.3" r="3.2"/><circle cx="660.5" cy="38.7" r="3.2"/><circle cx="866.0" cy="48.4" r="3.2"/><g class="end"><circle class="pos" cx="866.0" cy="48.4" r="13"/><text x="866.0" y="53.0">2</text></g></g>
-<g class="line" id="form2" style="--c:#1c7a58"><polyline points="44.0,175.1 249.5,203.0 455.0,181.9 660.5,150.3 866.0,131.4"/><circle cx="44.0" cy="175.1" r="3.2"/><circle cx="249.5" cy="203.0" r="3.2"/><circle cx="455.0" cy="181.9" r="3.2"/><circle cx="660.5" cy="150.3" r="3.2"/><circle cx="866.0" cy="131.4" r="3.2"/><g class="end"><circle class="pos" cx="866.0" cy="131.4" r="13"/><text x="866.0" y="136.0">3</text></g></g>
-<g class="line" id="form3" style="--c:#d1802a"><polyline points="44.0,148.5 249.5,148.5 455.0,153.8 660.5,102.3 866.0,153.8"/><circle cx="44.0" cy="148.5" r="3.2"/><circle cx="249.5" cy="148.5" r="3.2"/><circle cx="455.0" cy="153.8" r="3.2"/><circle cx="660.5" cy="102.3" r="3.2"/><circle cx="866.0" cy="153.8" r="3.2"/><g class="end"><circle class="pos" cx="866.0" cy="153.8" r="13"/><text x="866.0" y="158.4">4</text></g></g>
-<g class="line" id="form4" style="--c:#6d4fa2"><polyline points="44.0,206.9 249.5,212.4 455.0,239.1 660.5,210.1 866.0,179.6"/><circle cx="44.0" cy="206.9" r="3.2"/><circle cx="249.5" cy="212.4" r="3.2"/><circle cx="455.0" cy="239.1" r="3.2"/><circle cx="660.5" cy="210.1" r="3.2"/><circle cx="866.0" cy="179.6" r="3.2"/><g class="end"><circle class="pos" cx="866.0" cy="179.6" r="13"/><text x="866.0" y="184.2">5</text></g></g>
-<g class="line" id="form5" style="--c:#0f8b9e"><polyline points="44.0,218.5 249.5,201.6 455.0,195.0 660.5,202.3 866.0,192.6"/><circle cx="44.0" cy="218.5" r="3.2"/><circle cx="249.5" cy="201.6" r="3.2"/><circle cx="455.0" cy="195.0" r="3.2"/><circle cx="660.5" cy="202.3" r="3.2"/><circle cx="866.0" cy="192.6" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="192.6" r="13"/><text x="866.0" y="197.2">6</text></g></g>
-<g class="line" id="form6" style="--c:#b8477e"><polyline points="44.0,218.5 249.5,224.5 455.0,245.7 660.5,228.8 866.0,196.6"/><circle cx="44.0" cy="218.5" r="3.2"/><circle cx="249.5" cy="224.5" r="3.2"/><circle cx="455.0" cy="245.7" r="3.2"/><circle cx="660.5" cy="228.8" r="3.2"/><circle cx="866.0" cy="196.6" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="196.6" r="13"/><text x="866.0" y="201.2">7</text></g></g>
-<g class="line" id="form7" style="--c:#5f7a1f"><polyline points="44.0,163.5 249.5,157.9 455.0,200.4 660.5,217.3 866.0,200.8"/><circle cx="44.0" cy="163.5" r="3.2"/><circle cx="249.5" cy="157.9" r="3.2"/><circle cx="455.0" cy="200.4" r="3.2"/><circle cx="660.5" cy="217.3" r="3.2"/><circle cx="866.0" cy="200.8" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="200.8" r="13"/><text x="866.0" y="205.4">8</text></g></g>
-<g class="line" id="form8" style="--c:#7a5445"><polyline points="44.0,163.5 249.5,163.5 455.0,157.6 660.5,189.2 866.0,205.7"/><circle cx="44.0" cy="163.5" r="3.2"/><circle cx="249.5" cy="163.5" r="3.2"/><circle cx="455.0" cy="157.6" r="3.2"/><circle cx="660.5" cy="189.2" r="3.2"/><circle cx="866.0" cy="205.7" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="205.7" r="13"/><text x="866.0" y="210.3">9</text></g></g>
-<g class="line" id="form9" style="--c:#3550a0"><polyline points="44.0,175.1 249.5,192.0 455.0,165.3 660.5,185.5 866.0,217.6"/><circle cx="44.0" cy="175.1" r="3.2"/><circle cx="249.5" cy="192.0" r="3.2"/><circle cx="455.0" cy="165.3" r="3.2"/><circle cx="660.5" cy="185.5" r="3.2"/><circle cx="866.0" cy="217.6" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="217.6" r="13"/><text x="866.0" y="222.2">10</text></g></g>
-<g class="line" id="form10" style="--c:#c2562a"><polyline points="44.0,233.5 249.5,260.6 455.0,233.5 660.5,226.2 866.0,256.7"/><circle cx="44.0" cy="233.5" r="3.2"/><circle cx="249.5" cy="260.6" r="3.2"/><circle cx="455.0" cy="233.5" r="3.2"/><circle cx="660.5" cy="226.2" r="3.2"/><circle cx="866.0" cy="256.7" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="256.7" r="13"/><text x="866.0" y="261.3">11</text></g></g>
-<g class="line" id="form11" style="--c:#2e8f3f"><polyline points="44.0,197.5 249.5,191.4 455.0,197.3 660.5,248.9 866.0,267.7"/><circle cx="44.0" cy="197.5" r="3.2"/><circle cx="249.5" cy="191.4" r="3.2"/><circle cx="455.0" cy="197.3" r="3.2"/><circle cx="660.5" cy="248.9" r="3.2"/><circle cx="866.0" cy="267.7" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="267.7" r="13"/><text x="866.0" y="272.3">12</text></g></g>
-<g class="line" id="form12" style="--c:#556070"><polyline points="44.0,260.3 249.5,195.1 455.0,201.7 660.5,230.7 866.0,291.6"/><circle cx="44.0" cy="260.3" r="3.2"/><circle cx="249.5" cy="195.1" r="3.2"/><circle cx="455.0" cy="201.7" r="3.2"/><circle cx="660.5" cy="230.7" r="3.2"/><circle cx="866.0" cy="291.6" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="291.6" r="13"/><text x="866.0" y="296.2">13</text></g></g>
-<g class="line" id="form13" style="--c:#86722a"><polyline points="44.0,206.9 249.5,272.0 455.0,299.1 660.5,349.8 866.0,298.3"/><circle cx="44.0" cy="206.9" r="3.2"/><circle cx="249.5" cy="272.0" r="3.2"/><circle cx="455.0" cy="299.1" r="3.2"/><circle cx="660.5" cy="349.8" r="3.2"/><circle cx="866.0" cy="298.3" r="3.2"/><g class="end"><circle class="neg" cx="866.0" cy="298.3" r="13"/><text x="866.0" y="302.9">14</text></g></g>
-</svg></div>
-        <p class="hint">X-Achse: Spieltag, Y-Achse: Form. Eine Zeile in der Tabelle antippen
-        hebt das Team hier und in der Aufstellung hervor.</p>
+        <h2>Überraschung des Spieltags</h2>
+        <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
+        Unentschieden zählen nicht – die sind hier in jeder Paarung die unwahrscheinlichste
+        Variante.</p>
+        <div class="card surprise">
+          <div class="smatch"><div class="fxt"><img class="lg sm" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAD/ElEQVR42u2azU8TQRTAe9eDiZ78ByhsF0HiBxBEjSZ6UJEYFU8aA5HEgwkejDHBFgzIRwkhHgADRhKMJnowYgmCEjVEBeNBChqohoKotNBCqVDsduxOu8vudHfZWWZbTLrNSxd2Z+b95r03H29qMESvUCgE/jcxSF1JkCRIEiQ+IJ45PzAazcBkqoyRU4WtGxtk0jknqbiSGI2WjQMSDDLYAKikplUkFiSNqlBUMD+vQWyBVIvi+wkBoWgVyoQ/cs8KTzZLlh98PxE/ENW9qgBiLu+SreNV31f9QdBGKcS9SICwAoCOIHmIz9NR5UiASHWSbiByDZECQetiBxPiICaTvAuRBMnKqkb+z5AGWa18fMylGwhaHzs6EgPZl2dV9F3SIC96RlXHChaIsNKjR+5gg1AUHghaJ3sRB8F6rjCE4oBkZlYlGCQqx3rd2CAFx1tW40TBvVSDzM36NYOUffQCQ/skLzggC/NLquJENUi3za4KhI0DUQMCAFSkOkGLpbFA+nq/YM22hjanIgQnpQMevkxTY7/+IAsLy6oqvDLkVQWgZB2huGZ8ZEHW7hlGE4BIwlZE683NqY8fyLoBECn74JVsM3tvLXkQdky32n3EIcTWYfSZEM+cviuqGFe5ra0OrPe3n3uozxIFtcq2yzZVCm2+P6XJFdF9vm4gaqyCJim4+8Bf5cGBxtxcEdlYSSkSFLyPZk1G7D/5Z5tavseWvzeFnffSBFJpscnCbOlYdSPHuGuNBAUj6W5x2+rKZVDUZlhE21hBUs7l9mvOcWkCqb3dK6sstUayTk6kyvn9AVG7dPotciCcvwYCQayex5WVlaCo3cgVAlbrS8Aw6wRhKwBR5blcL4TRaAXZ2GEisWMMu11Odh1ID1vix6SXd8WiovZ1zux02NyLAeBwuEFxcSeYDe9RjKlm7LiQk4MHGkUWuHC+A0Jwm6qhQSfZGKF3RHw1I6MqJoMONAAVnW2DZWfdi4LjCQ+Mm3cD3wBNs+usOtiR5CZEWpANpMUpTaFb8EnqgmbYm8K0TkqKGQx/nubfuVr2BH7vzKwG42MzfJ25ufV8eylGM/lRKzJDM6LhseRiJ0w6y+2rlRZ8UhnGmqoe+F1S0gnevnboN4/Y7dOS8wbnJkrKxiQgbj4Hb/od8J3h4WmwP79BVXaR+EGPz7csyllxUKP239ASlRXdkb9Hf8Hnhw818esuYRlKcK9kQd1AnBOeyJoozQK83j/A1jXCK3j92lM4IHDKlV56AO/LbzyLAYFuq/H4TZdTXTZAuWU3pyDb2+yIVnCimZ+HHj/6BHbvqtF83BbXc3YhiFDh+fklrBhIKMie8B4b19eTv3xIgiRB9Af5B6XaVBFuMmPFAAAAAElFTkSuQmCC" alt=""><span>VfB Baybachhöhe</span></div><div class="fxt win"><img class="lg sm" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAFmklEQVR42u1aj09VdRR//0U5WFlsiYYUCr773lBQ3n1hOgonIQUUCcGiSBZhslik6LJfmLinODaS7TWYG5qIEFgWg4AI9C3SRTAIJugSisEIGvXtfg59b/fBu/B43Pe4bJ7t7N7v/f4453PPOd/v937PNRi8RIIQvdZstgaFC9GRYNzjmUFvJAgWi8konjGbxN9Ngshc8Z7YJCdWa0djSGNJY0Z6XXGT0fK2JHT8fyUTWcmZMtbd3cOWSxgDYz0Tk6AEOA6Z2oIQxM+SkzI0UXop4CDTLFgLNAVSWlouC5mcnKTr+PiEV8FApmZATIK1r/DIh4wD+eD4p8Qwf3//AD1D/aUvallxcQkbuTfK9sW/TPWZr+awtNQsVld3lWUfyGO9vX0sbu+LrLKiih3MfZftjN7LyssrqD/aDQ7epvrOTocMBAwdtLAGUwLBFb6MGIEyw0N3qB5uAAVstlJ2oug0AUG73bviWUPDNVZTU8+OHfuElLeKsSznzXcIKNqgjHYA+PFHp9jn9vNzgIhMcyAL0fT0tOautSJAYCEQ3i4s43B0sfbvO+lNwyo0O5WUsQtVl4k7OxysrMxOloGL3br1s+SiV+QXsuJA4Oc8TvLyDtMaAmWzXj9InJycQeUXnk9j+flHqYw+rS3t5J4AvqJAvDFr3QeyVCBNTa0003BXWgqjD/piDJ8CQcDCn5XKPLtpK8tZ/wQ7tTaAVa1Zwy49+IBbjLYnHwmgvhhDOSZkQJZXgHCljwesW1DBL4M3sq78fLcBuWLI4OA0B5IbGOyWEmNdXeQW1yIjlgUGDJk+AwILuKLrb2StLiBqdPNo4eoB0p66n5TG1RWwX+12lwpeDQtl1f5++gEC9wHVrntM1UI1Dz+k6obfxcXpA8iVgEdJIQQ4yh0Z6VS+ffEi+zo8nO5/a2xUBTl1965+YuSfmRlSCqD+HBqie7iOUnHctyUlOoFW1ul21uJ1f9y4IZdnJiac6kAjbW36AQKG+3CCVfjzX4pPysorQXYXFdH9N1FR+gKiVLTntE1+1n/u3H+zWipdh6qrnSyoq3XEVSAPVFTQs+mRESqPdnTMHloMDMhteBzpCkhDSIjsVu6Qu9sXnwPhQc0VvNfc7BLAQGWFU7+6DevZzcJCfQDh68Vcn1e6kKt6bkX+HCs94mdFgCgJ68ncIP97aop9a4mi+96zZ1X7ojzR1zdvo+kTINydFiK84R6bbXY7sidW7js3lrCNAcG6PgeipK9Mgvwdwumn9wqcAHMgeK4kR24u+2tszOV0rDkQnDllBG12EuLIfWvWdRZZ1PiUiy1KU0yMS6uBmhUW45weFMrs9vOaARnEQdpWo8Wjb4rRjh/mKc9jCC7G92qu+kImDviggwYJHTEDB294K54AgcWUhNWdu1trQgJdW1S285CJw29Jh1St0gp0ipi1IcQjMHArBD3WDWV8DdfWqloDsvgL1C4/YhKv44zWU6ssNG3faahXtQYFuiRb66wVHTxHGKOWBaLxKSsB4Nt6rDNz20BGzeV6ba3ByWgUEyO27aLTwfgnzR4D4euK2g74uRAzyYAss9G6zzsJUZMo7ciz2I7tMSwleItHQLDfUgOCMWnslzKZWRBbvJvdFazDeYcOk0BPLIMFkBP/7OWWwJjZBw4h1Tbskxw7BKWnZ1NCxxK23eNg50dCUVt20Fiwts9AKIL/R+T+Cgrep6Cs9PNbMiD0Qd8j0hYI1tB8hnKXzIK1EIog04Tra49vchvEK9L2Q9lX03y6p/+cQBHkOfifC3Z/f1UAqON/TvA0t9G40183/6bALaAUkja47t68bR6Ip0MjmLLNirnS4mCsgVAwJSWTLIT7tI1hbL/E3GrIx8+CsAYa9E48dk4U2Sh7C+bAUGdYbSRNpdVySs1kvWC4T4vTv15qTQKnnuHKAAAAAElFTkSuQmCC" alt=""><span>SG Dickenschied</span></div><b class="score">1:3</b></div>
+          <div class="bar"><i class="w" style="width:70.1%"></i><i class="d" style="width:13.2%"></i><i class="l" style="width:16.7%"></i></div>
+          <p class="sprob">Vorher: Heim 70&nbsp;% · Remis 13&nbsp;% · <b>Auswärts 17&nbsp;%</b></p>
+          <table class="sfacts">
+            <thead><tr><th class="l">Vorher → jetzt</th><th>Form</th><th>Tabelle</th></tr></thead>
+            <tbody><tr><td class="l">VfB Baybachhöhe</td><td>60,3 <span class="to">→ 54,3</span></td><td>4. <span class="to">→ 4.</span></td></tr><tr><td class="l">SG Dickenschied</td><td>31,6 <span class="to">→ 37,6</span></td><td>14. <span class="to">→ 14.</span></td></tr></tbody>
+          </table>
+          <p class="hint">SG Dickenschied gewinnt mit einer Chance von 17&nbsp;% vorher –
+          von den 7 Spielen des Spieltags der Sieg, den das Modell am wenigsten erwartet hat.</p>
+        </div>
+        <p class="hint">Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu
+        diesem Spieltag; unter 25&nbsp;% gilt als Überraschung, <strong>Form</strong> und
+        <strong>Tabelle</strong> stehen vor und nach dem Spieltag.</p>
+        <h3>Belag</h3>
+        <div class="card">
+          <table class="sfacts belag">
+            <thead><tr><th class="l">Platz</th><th>Tore/Spiel</th><th>Heimbonus</th></tr></thead>
+            <tbody><tr class=""><td class="l">Rasen<span class="n">113 Spiele</span></td><td>3,78</td><td class="hb"><b>+7</b><span class="hbar"><i style="width:38%"></i></span></td></tr><tr class=""><td class="l">Kunstrasen<span class="n">95 Spiele</span></td><td>3,79</td><td class="hb"><b>+19</b><span class="hbar"><i style="width:100%"></i></span></td></tr><tr class=""><td class="l">Hartplatz<span class="n">8 Spiele</span></td><td>3,12</td><td class="hb"><b>+15</b><span class="hbar"><i style="width:80%"></i></span></td></tr><tr class="total"><td class="l">Liga gesamt<span class="n">216 Spiele</span></td><td>3,76</td><td class="hb"><b>+13</b><span class="hbar"><i style="width:67%"></i></span></td></tr></tbody>
+          </table>
+        </div>
+        <p class="hint"><strong>Heimbonus</strong> ist, um wie viele Prozentpunkte der Gastgeber
+        besser abschneidet, als die Stärke beider Teams erwarten lässt – +7 auf Rasen heißt
+        7 Siege mehr aus hundert Heimspielen, über alle Saisons gerechnet und bei dieser
+        Datenmenge ein Hinweis, kein Beweis.</p>
+        <h3>Rückstand und Führung</h3>
+        <div class="card cbs">
+          <div class="cb"><span class="badge">Comeback-Team</span><div class="fxt"><img class="lg sm" src="data:image/png;base64,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" alt=""><span>TuS Kirchberg II</span></div><p><b>4 Punkte</b> aus 2 Spielen mit Rückstand, 1 davon noch gewonnen.</p></div><div class="cb"><span class="badge">Führung verspielt</span><div class="fxt"><img class="lg sm" src="data:image/png;base64,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" alt=""><span>SG Werlau</span></div><p><b>5 Punkte</b> aus 3 Führungen liegen gelassen, 1 davon noch verloren.</p></div>
+          <div class="first"><p>Wer das erste Tor schießt, gewinnt <b>73&nbsp;%</b> der
+          Spiele, 13&nbsp;% enden remis, 13&nbsp;% gehen noch
+          verloren.</p><div class="bar"><i class="w" style="width:73.3%"></i><i class="d" style="width:13.3%"></i><i class="l" style="width:13.3%"></i></div></div>
+        </div>
+        <p class="hint">Nur diese Saison, aus den Torminuten: die meisten Punkte aus Spielen mit
+        Rückstand und die meisten aus eigener Führung liegen gelassenen, beides erst ab vier
+        Punkten.</p>
         <p class="hint legend"><strong>Form</strong> rechnet nur die letzten fünf Spieltage, dafür
         mit Gegnerstärke und Torverhältnis: 50 ist Ligadurchschnitt, darüber heißt besser als der
         Schnitt. <strong>Saison</strong> daneben ist der Wert über alle bisherigen Spiele – wer
@@ -675,13 +717,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc">2:4</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="sc">2:0</td><td class="pr">60&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc">1:6</td><td class="pr">36&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>2:4</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:0</td><td class="pr">60&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:6</td><td class="pr">36&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -746,13 +794,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc">0:5</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="sc">4:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="sc">1:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="sc">1:5</td><td class="pr">42&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc">0:0</td><td class="pr">Sieg 68&nbsp;%<span class="badge">Überraschung</span></td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>0:5</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>4:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>1:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:5</td><td class="pr">42&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">68&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -817,13 +871,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc">4:3</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc">2:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="sc">1:2</td><td class="pr">Sieg 24&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="sc">2:0</td><td class="pr">58&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>4:3</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:2</td><td class="pr">24&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:0</td><td class="pr">58&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -888,13 +948,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc">0:2</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc">1:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc">0:3</td><td class="pr">29&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc">1:3</td><td class="pr">Sieg 70&nbsp;%<span class="badge">Überraschung</span></td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>0:2</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Sa 22.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>1:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>0:3</td><td class="pr">29&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:3</td><td class="pr">70&nbsp;%<span class="badge">Überraschung</span></td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -959,13 +1025,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc">4:3</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="sc">3:3</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc">4:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="sc">4:1</td><td class="pr">55&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc">1:2</td><td class="pr">28&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>4:3</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>3:3</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>4:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>4:1</td><td class="pr">55&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:2</td><td class="pr">28&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1030,13 +1102,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Sa 08.08.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc">4:1</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="sc">2:1</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc">2:2</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="sc">1:1</td><td class="pr">Sieg 58&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="sc">0:0</td><td class="pr">Sieg 18&nbsp;%<span class="badge">Überraschung</span></td></tr>
+          <tr><td class="md">1</td><td class="dt">Sa 08.08.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>4:1</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Braunshorn <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:1</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Werlau <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>2:2</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SSV Boppard <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>1:1</td><td class="pr">58&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">18&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1101,13 +1179,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc">2:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="sc">2:1</td><td class="pr">50&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc">2:3</td><td class="pr">25&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">TuS Rheinböllen <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Bremm <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Blankenrath <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:1</td><td class="pr">50&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>2:3</td><td class="pr">25&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1172,13 +1256,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Sa 08.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc">4:1</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="sc">3:3</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc">2:4</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="sc">2:1</td><td class="pr">50&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="sc">2:1</td><td class="pr">54&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">Sa 08.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>4:1</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>3:3</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>2:4</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:1</td><td class="pr">32&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>2:1</td><td class="pr">54&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1243,13 +1333,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="sc">1:2</td><td class="pr">Sieg 60&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc">2:1</td><td class="pr">54&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">SG Bremm <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:2</td><td class="pr">60&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Blankenrath <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:1</td><td class="pr">29&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1314,13 +1410,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc">1:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="sc">2:1</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc">4:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="sc">2:0</td><td class="pr">60&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc">2:3</td><td class="pr">25&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>1:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:1</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>4:1</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SV Strimmig <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:0</td><td class="pr">24&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Zell <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>2:3</td><td class="pr">58&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1385,13 +1487,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="sc">0:2</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="sc">4:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="sc">1:1</td><td class="pr">Sieg 26&nbsp;%<span class="badge">Überraschung</span></td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc">1:2</td><td class="pr">28&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>0:2</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">TuS Kirchberg II <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>4:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Dickenschied <span class="vs">H</span></td><td class="sc"><span class="res w">S</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>1:1</td><td class="pr">26&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Mi 02.09.</td><td class="opp">SC Weiler <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:2</td><td class="pr">54&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1456,13 +1564,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="sc">0:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="sc">0:3</td><td class="pr">29&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc">2:0</td><td class="pr">58&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">Fr 07.08.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Zell <span class="vs">A</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">Fr 21.08.</td><td class="opp">TuS Rheinböllen <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>0:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">Fr 28.08.</td><td class="opp">VfB Baybachhöhe <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>0:3</td><td class="pr">54&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SG Rheinblick Oberwesel <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>2:0</td><td class="pr">25&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1527,13 +1641,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc">0:5</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="sc">1:5</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc">2:2</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="sc">4:1</td><td class="pr">55&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc">1:6</td><td class="pr">36&nbsp;%</td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>0:5</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Dickenschied <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:5</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SG Vorderhunsrück Sabershausen <span class="vs">H</span></td><td class="sc"><span class="res d">U</span>2:2</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">SC Weiler <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>4:1</td><td class="pr">28&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">So 06.09.</td><td class="opp">SV Strimmig <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:6</td><td class="pr">45&nbsp;%</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1598,13 +1718,19 @@
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Wahrscheinlichkeit</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
-          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc">1:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="sc">1:5</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc">3:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc">1:5</td><td class="pr">42&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="sc">1:3</td><td class="pr">Sieg 17&nbsp;%<span class="badge">Überraschung</span></td></tr>
+          <tr><td class="md">1</td><td class="dt">So 09.08.</td><td class="opp">SG Braunshorn <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>1:0</td><td class="pr">–</td></tr><tr><td class="md">2</td><td class="dt">So 16.08.</td><td class="opp">SG Werlau <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:5</td><td class="pr">–</td></tr><tr><td class="md">3</td><td class="dt">So 23.08.</td><td class="opp">SSV Boppard <span class="vs">A</span></td><td class="sc"><span class="res l">N</span>3:0</td><td class="pr">–</td></tr><tr><td class="md">4</td><td class="dt">So 30.08.</td><td class="opp">TuS Kirchberg II <span class="vs">H</span></td><td class="sc"><span class="res l">N</span>1:5</td><td class="pr">40&nbsp;%</td></tr><tr><td class="md">5</td><td class="dt">Sa 05.09.</td><td class="opp">VfB Baybachhöhe <span class="vs">A</span></td><td class="sc"><span class="res w">S</span>1:3</td><td class="pr">17&nbsp;%<span class="badge">Überraschung</span></td></tr>
         </tbody>
       </table>
     </div>
+    <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
+    <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A sagen, ob es zu Hause
+    oder auswärts spielte. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell
+    vor dem Anpfiff einen Sieg dieses Teams fand – nur aus den Ergebnissen bis dahin. Als
+    <strong>Überraschung</strong> gilt ein Sieg, dem es weniger als 25&nbsp;% gab – dieselbe
+    Regel wie bei der Überraschung des Spieltags.</p>
     <h3>Verbleibende Gegner</h3>
     <div class="card">
       <table class="tres">
@@ -1766,7 +1892,7 @@
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
-    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 11.09.2026</p>
+    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 17.09.2026</p>
   </footer>
 </main>
 <script>
@@ -1780,7 +1906,8 @@
     rows.forEach(tr => {
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
-      const line = document.getElementById('form' + tr.dataset.rank);
+      const line = document.getElementById('form' + tr.dataset.rank);  // archive pages only
+      if (!line) return;
       line.classList.toggle('sel', on);
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     });
