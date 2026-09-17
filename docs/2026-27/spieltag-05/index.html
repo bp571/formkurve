@@ -97,6 +97,23 @@
   .seasons span { color:var(--ink); font-weight:600; }
   .seasons a { color:inherit; }
 
+  /* Matchday navigation: numbers 1..N with links to snapshots, past matches are clickable */
+  .matchdays { display:flex; gap:8px; align-items:center; padding:8px 0;
+               font-size:13px; }
+  .matchdays a { color:var(--ink); text-decoration:none; padding:2px 6px;
+                 border:1px solid var(--line); border-radius:3px; }
+  .matchdays a:hover { background-color:var(--card); }
+  .matchdays span[aria-current] { font-weight:600; color:var(--down); }
+  .matchdays span.future { color:var(--muted); }
+  .matchdays .nav-prev, .matchdays .nav-next { padding:2px 4px; }
+
+  /* Banner for snapshot pages showing which matchday this is. */
+  .banner.snapshot { background-color:var(--mark-bg); padding:12px; margin:0;
+                      border-bottom:2px solid var(--mark-line); }
+  .banner.snapshot p { margin:0; font-size:14px; color:var(--mark); }
+  .banner.snapshot .current-link { color:var(--down); text-decoration:none; }
+  .banner.snapshot .current-link:hover { text-decoration:underline; }
+
   /* Three facts of equal weight in one row: the two ends of the form table and
      the team the table is most wrong about. Same size, same build, so none of
      them reads as a title over the others. */
@@ -525,7 +542,7 @@
 <body>
 <div class="banner snapshot">
   <p>Stand nach Spieltag 5 – so sah die Seite damals aus.
-  <a href="../" class="current-link">→ Aktueller Stand</a></p>
+  <a href="../../" class="current-link">→ Aktueller Stand</a></p>
 </div>
 <header class="mast">
   <div class="wrap">
@@ -539,7 +556,7 @@
       Nach <b>Spieltag 5</b>, 06.09.2026</p>
     </div>
     <nav class="seasons"><span>2026/27</span><a href="2025-26/">2025/26</a></nav>
-    <nav class="matchdays"><a href="2026-27/spieltag-04/" class="nav-prev">‹</a><a href="2026-27/spieltag-01/">1</a><a href="2026-27/spieltag-02/">2</a><a href="2026-27/spieltag-03/">3</a><a href="2026-27/spieltag-04/">4</a><span aria-current="page">5</span></nav>
+    <nav class="matchdays"><a href="../spieltag-04/" class="nav-prev">‹</a><a href="../spieltag-01/">1</a><a href="../spieltag-02/">2</a><a href="../spieltag-03/">3</a><a href="../spieltag-04/">4</a><span aria-current="page">5</span></nav>
     <div class="facts">
       <p class="fact"><span class="k">Beste Form</span>
       <span class="t">SV Strimmig</span>

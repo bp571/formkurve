@@ -623,39 +623,46 @@ def svg_chart(table, matchdays, key="series", prefix="line", highlight=()):
 
 
 def snapshot_banner(season, matchday_n):
-    """Info banner for historical snapshot pages."""
+    """Info banner for historical snapshot pages. Path to the current page is
+    always two levels up: docs/<season>/spieltag-NN/index.html -> docs/index.html."""
     if season != SEASON_CURRENT or matchday_n is None:
         return ""
     return f"""<div class="banner snapshot">
   <p>Stand nach Spieltag {matchday_n} – so sah die Seite damals aus.
-  <a href="../" class="current-link">→ Aktueller Stand</a></p>
+  <a href="../../" class="current-link">→ Aktueller Stand</a></p>
 </div>"""
 
 
-def matchday_nav(season, current_matchday, max_matchday):
-    """HTML for matchday selector in the masthead. Links to snapshot pages."""
+def matchday_nav(season, current_matchday, season_max_matchday, on_snapshot):
+    """HTML for matchday selector in the masthead. Links to snapshot pages.
+
+    Every matchday from 1..season_max_matchday has a snapshot page (write_season()
+    writes them all together), so every number except the current one is a link -
+    there is no "future" state to grey out within a season already played that far.
+
+    on_snapshot: True if this page itself is docs/<season>/spieltag-NN/index.html
+    (links to siblings are "../spieltag-MM/"), False if it is docs/index.html
+    (links are "<season-slug>/spieltag-MM/").
+    """
     if season != SEASON_CURRENT or current_matchday is None:
         return ""
 
+    season_slug = season.replace("/", "-")
+    prefix = "../" if on_snapshot else f"{season_slug}/"
+
     links = []
-    for md in range(1, max_matchday + 1):
-        if md < current_matchday:
-            # Past matchday: link to snapshot
-            links.append(f'<a href="2026-27/spieltag-{md:02d}/">{md}</a>')
-        elif md == current_matchday:
-            # Current page
+    for md in range(1, season_max_matchday + 1):
+        if md == current_matchday:
             links.append(f'<span aria-current="page">{md}</span>')
         else:
-            # Future matchday: grey out
-            links.append(f'<span class="future">{md}</span>')
+            links.append(f'<a href="{prefix}spieltag-{md:02d}/">{md}</a>')
 
-    # Navigation buttons
     nav_prev = ""
     nav_next = ""
     if current_matchday > 1:
-        nav_prev = f'<a href="2026-27/spieltag-{current_matchday-1:02d}/" class="nav-prev">‹</a>'
-    if current_matchday < max_matchday:
-        nav_next = f'<a href="2026-27/spieltag-{current_matchday+1:02d}/" class="nav-next">›</a>'
+        nav_prev = f'<a href="{prefix}spieltag-{current_matchday-1:02d}/" class="nav-prev">‹</a>'
+    if current_matchday < season_max_matchday:
+        nav_next = f'<a href="{prefix}spieltag-{current_matchday+1:02d}/" class="nav-next">›</a>'
 
     return f'<nav class="matchdays">{nav_prev}{"".join(links)}{nav_next}</nav>'
 
@@ -1391,6 +1398,11 @@ def render(season, rows, matchday_n=None):
     if matchday_n is None:
         matchday = matchdays[-1] if matchdays else 0
     # else: use matchday from snapshot() - already set
+    # The nav needs how far the season has actually got, not how far this
+    # snapshot's own played rows reach - matchdays[-1] on a snapshot is always
+    # matchday_n itself, which would hide every later matchday from the nav.
+    all_played = [r for r in rows if r["status"] == "played"]
+    season_max_matchday = max((int(r["matchday"]) for r in all_played), default=0)
     last_date = max(r["date"] for r in played) if played else None
     last_date = ".".join(reversed(last_date.split("-")))
     generated = date.today().strftime("%d.%m.%Y")
@@ -2095,7 +2107,7 @@ def render(season, rows, matchday_n=None):
       Nach <b>Spieltag {matchday}</b>, {last_date}</p>
     </div>
     {season_switcher(season)}
-    {matchday_nav(season, matchday if matchday_n is None else matchday_n, matchdays[-1] if matchdays else 0)}
+    {matchday_nav(season, matchday, season_max_matchday, matchday_n is not None)}
     <div class="facts">
       <p class="fact"><span class="k">Beste Form</span>
       <span class="t">{html.escape(top_team["team"])}</span>
