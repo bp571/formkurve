@@ -103,10 +103,12 @@
   .lede { display:flex; flex-wrap:wrap; align-items:flex-end;
            justify-content:space-between; gap:18px 52px; padding:18px 0 20px; }
   .claim { flex:1 1 460px; }
-  .claim p { margin:0; max-width:46ch; font-size:clamp(16px,1.35vw,19px);
+  .claim p { margin:0; max-width:46ch; font-size:clamp(15.5px,1.2vw,17px);
               color:var(--muted); }
-  .claim .who { font:700 clamp(28px,3.9vw,50px)/1.04 var(--display);
-                 color:var(--ink); margin:2px 0 4px; max-width:20ch; }
+  /* The name is the subject of the sentence, not a second wordmark: a clear
+     step below the h1, so the page still has one title. */
+  .claim .who { font:700 clamp(22px,2.3vw,30px)/1.1 var(--display);
+                 color:var(--ink); margin:3px 0 3px; }
 
   .facts { flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
   .fact { display:flex; align-items:baseline; gap:9px; margin:0; }
@@ -354,10 +356,42 @@
             color:var(--muted); font-size:13.5px; }
   footer p { margin:0; max-width:100ch; }
 
+  /* ---- Tabs ---------------------------------------------------------------- */
+  /* Three questions on one notice - who is in form, one team up close, what
+     comes next - as index tabs on the same ink rule every heading uses. The
+     open tab breaks the rule, the way a folder tab joins its own sheet; the
+     others stay unfilled, so nothing here reads as a button. */
+  .tabs { display:flex; gap:4px; margin:26px 0 0; padding:0 8px;
+           border-bottom:2.5px solid var(--ink); }
+  .tabs button { appearance:none; cursor:pointer; margin:0 0 -2.5px;
+                  padding:9px 16px 10px; font:600 16px/1 var(--display);
+                  color:var(--muted); background:transparent;
+                  border:2.5px solid transparent; border-radius:4px 4px 0 0; }
+  .tabs button:hover { color:var(--ink); }
+  .tabs button[aria-selected="true"] { color:var(--ink); border-color:var(--ink);
+                                        border-bottom-color:var(--paper); }
+  .tabs button:focus-visible { outline:2px solid var(--ink); outline-offset:-6px; }
+  .view[hidden] { display:none; }
+  /* The tab strip already rules the view off, so the first block starts flush. */
+  .tabs ~ .view > :first-child { margin-top:26px; }
+
   /* ---- Team detail panels ------------------------------------------------ */
-  .tdet { max-width:1080px; margin:28px auto 0; padding:28px 0 0; border-top:2.5px solid var(--ink); }
   .tdet h2 { margin-top:0; }
-  .tdet[hidden] { display:none; }
+  .tdet h3 { margin:22px 0 8px; font:600 17px/1.2 var(--display); }
+  .tdet .col > h3:first-child { margin-top:0; }
+  .tpanel[hidden] { display:none; }
+  /* The picker is a line on the sheet, not a widget: the name sits in the
+     display face on an ink rule, with the browser's own arrow beside it. */
+  .tpick { display:inline-flex; align-items:baseline; gap:10px; margin:0 0 22px;
+            color:var(--muted); font-size:14.5px; }
+  .tpick select { appearance:none; -webkit-appearance:none; cursor:pointer;
+                   font:700 20px/1.2 var(--display); color:var(--ink);
+                   background:transparent; border:0; border-bottom:2.5px solid var(--ink);
+                   border-radius:0; padding:2px 26px 3px 0; max-width:min(100%,24ch);
+                   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2323201b' stroke-width='2'/%3E%3C/svg%3E");
+                   background-repeat:no-repeat; background-position:right 4px center;
+                   background-size:12px 8px; }
+  .tpick select:focus-visible { outline:2px solid var(--ink); outline-offset:4px; }
   .thead { display:flex; gap:24px; margin:0 0 20px; }
   .tchest { display:flex; gap:14px; flex:0 0 auto; }
   .tname { display:block; font:700 20px var(--display); color:var(--ink); margin-bottom:4px; }
@@ -401,7 +435,7 @@
   }
   @media (max-width:1399px) {
     /* Stacked: keep one comfortable measure instead of stretching to 1760px. */
-    .dash, .pitchsec, .fdash { max-width:1080px;
+    .dash, .pitchsec, .fdash, .tdet { max-width:1080px;
                                 margin-left:auto; margin-right:auto; }
   }
   /* Below this the two columns of small print would be forty characters wide,
@@ -482,6 +516,7 @@
   </div>
 </header>
 <main class="wrap">
+  <div class="view" id="v-form">
   <section class="pitchsec">
     <h2>Aufstellung</h2>
     <p class="sub">Ein Trikot je Team, aufgestellt nach der aktuellen Form.
@@ -621,7 +656,8 @@
       </section>
     </div>
   </div>
-
+  </div>
+  <div class="view" id="v-prognose">
 <div class="fdash solo"><section class="fcast">
     <h2>Was besser sein müsste – und es nicht ist</h2>
     <p class="sub">Jeder dieser Ansätze wurde mit demselben Verfahren in Wahrscheinlichkeiten
@@ -654,6 +690,7 @@
     Beschreibung.</p>
   </section>
 </div>
+  </div>
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB) – dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
@@ -663,12 +700,11 @@
 <script>
   const rows = [...document.querySelectorAll('tbody tr[data-rank]')];
   const tokens = [...document.querySelectorAll('.ptok')];
-  const panels = [...document.querySelectorAll('section.tdet')];
+  const panels = [...document.querySelectorAll('.tpanel')];
+  const picker = document.getElementById('tpick');
   const selected = new Set(['0', '1', '2']);
-  let detail = '0';
 
   function apply() {
-    // Form chart highlighting and selection
     rows.forEach(tr => {
       const on = selected.has(tr.dataset.rank);
       tr.classList.toggle('sel', on);
@@ -677,34 +713,56 @@
       if (on) line.parentNode.appendChild(line);     // draw highlighted lines on top
     });
     tokens.forEach(g => g.classList.toggle('sel', selected.has(g.dataset.rank)));
-
-    // Team panel highlighting: show the detail panel for current team
-    panels.forEach(p => {
-      const rank = p.dataset.rank;
-      p.hidden = rank !== detail;
-      // Also highlight the season chart line in this panel
-      if (rank === detail) {
-        const seasonLine = p.querySelector('#season' + detail);
-        if (seasonLine) {
-          p.querySelectorAll('.line').forEach(l => l.classList.remove('sel'));
-          seasonLine.classList.add('sel');
-          if (seasonLine.parentNode) seasonLine.parentNode.appendChild(seasonLine);
-        }
-      }
-    });
   }
 
   function toggle(rank) {
     selected.has(rank) ? selected.delete(rank) : selected.add(rank);
-    detail = rank;  // Always set detail panel to clicked team
     apply();
+  }
+
+  // The detail section follows the dropdown only, independent of the highlight.
+  function showDetail(rank) {
+    panels.forEach(p => {
+      p.hidden = p.dataset.rank !== rank;
+      if (p.hidden) return;
+      const seasonLine = p.querySelector('#season' + rank);
+      if (seasonLine) {
+        p.querySelectorAll('.line').forEach(l => l.classList.remove('sel'));
+        seasonLine.classList.add('sel');
+        seasonLine.parentNode.appendChild(seasonLine);
+      }
+    });
+  }
+  if (picker) {
+    picker.addEventListener('change', () => showDetail(picker.value));
+    showDetail(picker.value);
   }
 
   // On a phone the pitch is wider than the screen and scrolls. Left-aligned it
   // opens on the weakest teams with the halfway line off-screen, so it starts
-  // centred on the league average instead.
+  // centred on the league average instead. Redone whenever its tab opens,
+  // because a hidden pitch has no width to centre on.
   const pw = document.querySelector('.pwrap');
-  if (pw) pw.scrollLeft = (pw.scrollWidth - pw.clientWidth) / 2;
+  function centrePitch() { if (pw) pw.scrollLeft = (pw.scrollWidth - pw.clientWidth) / 2; }
+
+  // Tabs: the hash names the open one, so a view can be linked to directly.
+  const tabs = [...document.querySelectorAll('.tabs button')];
+  const views = [...document.querySelectorAll('.view')];
+  function showView(id) {
+    tabs.forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === id)));
+    views.forEach(v => v.hidden = v.id !== 'v-' + id);
+    centrePitch();
+  }
+  if (tabs.length) {
+    tabs.forEach(b => b.addEventListener('click', () => {
+      showView(b.dataset.view);
+      history.replaceState(null, '', '#' + b.dataset.view);
+    }));
+    const start = location.hash.slice(1);
+    showView(tabs.some(b => b.dataset.view === start) ? start : 'form');
+  } else {
+    centrePitch();
+  }
 
   rows.forEach(tr => {
     tr.addEventListener('click', () => toggle(tr.dataset.rank));
