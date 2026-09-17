@@ -1,0 +1,44 @@
+name: Weekly update
+
+on:
+  schedule:
+    # 19:00 UTC = 20/21 Uhr deutsche Zeit (je nach Sommer-/Winterzeit)
+    - cron: "0 19 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache scraped data
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: power-ranking-data-${{ github.run_id }}
+          restore-keys: |
+            power-ranking-data-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scrape, rate, build pages
+        run: python run.py
+
+      - name: Commit and push docs if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs
+          git diff --staged --quiet && exit 0
+          git commit -m "Automatic update: $(date -u +%Y-%m-%d)"
+          git push
