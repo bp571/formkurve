@@ -235,10 +235,14 @@ Two methodological notes:
 contains the full dashboard; assets (fonts, logos) are shared in `docs/assets/` instead of embedded. 
 Form-sorted table (rank, team with its last five results, form, change vs. previous matchday, season 
 power score, matches played, record, goals, goal difference, official table position with its distance 
-to the form rank), a full-width pitch laying the league out by form, beside the table the *Überraschung 
-des Spieltags* card, the *Belag* table (goals per match and Heimbonus per surface, all seasons pooled 
-because one is too thin) and the *Rückstand und Führung* card — then the next matchday's forecast and 
-the predictor table behind it, side by side in the same grid, and a source link.
+to the form rank), a full-width pitch laying the league out by form, beside the table the
+**matchday sheet** (`report.matchday_sheet()`: every match of the latest matchday as one line of a
+report form — both sides and the score, the goal minutes as a strip with the home side's goals
+above the line and the visitor's below, kickoff / ground / attendance / half-time from
+`details.csv`, and the pre-match H/D/A bar; the goal strip repeats per match in the team panels),
+the *Belag* table (goals per match and Heimbonus per surface, all seasons pooled because one is
+too thin) and the *Rückstand und Führung* card — then the next matchday's forecast and the
+predictor table behind it, side by side in the same grid, and a source link.
 
 **Snapshots** (`docs/<season>/spieltag-NN/index.html`, current season only): one page per matchday, 
 showing the state *after* that matchday was played. All data (form, power score, forecast, simulation) 
@@ -247,7 +251,7 @@ in the masthead (numbers 1..26, with links to past matchdays) and a banner below
 the historical view. No "Stand der Berechnung" timestamp on snapshots.
 
 Archive pages (`docs/<season>/index.html` for finished seasons) carry the dashboard only — pitch,
-form table, and in place of the surprise card the inline-SVG form chart (one line per team over the
+form table, and in place of the matchday sheet the inline-SVG form chart (one line per team over the
 form window; a finished season has no "this weekend", and the calibration for its forecast is not
 loaded). The forecast and simulation are absent because nothing is scheduled left to forecast; the
 page opens directly on the facts. A season switcher in the masthead links between all pages, both
@@ -269,20 +273,28 @@ matchdays only, restarted from 1500 at every matchday — is the headline number
 score rides alongside in a quieter **Saison** column. The chip beside the official position is now
 the distance to the *form* rank: 2025/26 ends with SC Weiler tenth in the table and third in form.
 
-**Six editorial markers, each by a fixed rule with a floor**, so a reader can check a badge
-against the row it sits on: *Mannschaft der Stunde* (largest positive gap from form rank to table
+**Editorial markers, each by a fixed rule with a floor**, so a reader can check a note against
+the row it sits on: *Mannschaft der Stunde* (largest positive gap from form rank to table
 position, needs ≥ 2 places), *Formsprung* (largest gain over the previous matchday, needs ≥ 1.5
 points, skipped if it would land on the same row), *Topspiel* in the forecast (best combined form of
 the two sides — deliberately **not** "closest percentages", which span a few points all season and
-would mark noise), *Überraschung des Spieltags* (the win of the latest matchday with the lowest
-pre-match win probability from the page's own forecast, needs < 25 % — **wins only**, because a
-draw is the least likely outcome of every pairing here at 13–19 %, so by probability alone almost
-every matchday's surprise would be a 1:1; the same rule marks *Überraschung* in the team panels),
-*Comeback-Team* and *Führung verspielt* (most points taken from matches trailed in / most points
-given away from matches led in, current season only, needs ≥ 4 points — more than one win — ties
-to the team that needed fewer matches; both from `events.csv`, so they are counts, never rates).
-Below their floors the badges simply do not render. They are drawn in an amber that no data uses,
-because green and wine mean above and below average everywhere else on the page.
+would mark noise), a **"!"** behind the score on the sheet and in the team panels (a win the
+page's own forecast gave < 25 % — **wins only**, because a draw is the least likely outcome of
+every pairing here at 13–19 %, so by probability alone almost every matchday's surprise would be
+a 1:1), *gedreht* / *Führung verspielt* under a match's goal strip (`report.swing()`: the winner
+was behind at some point / the side that led last in a draw; the pen underlines the minutes from
+the goal that opened that state to the goal that closed it), and the season's *Comeback-Team* and
+*Führung verspielt* (most points taken from matches trailed in / most points given away from
+matches led in, current season only, needs ≥ 4 points — more than one win — ties to the team that
+needed fewer matches; both from `events.csv`, so they are counts, never rates). Below their floors
+the notes simply do not render.
+
+**One gesture per kind of note**, so they are told apart before they are read: the highlighter
+and the ring belong to *Mannschaft der Stunde* alone, *Formsprung* is a ring with an arrow to the
+column it is about, *Topspiel* is underlined, the "!" is a "!", and everything else is plain
+handwriting in the margin (`.badge.plain`). All in an amber that no data uses, because green and
+wine mean above and below average everywhere else on the page — including the goal strip, where
+they mean the home side's and the visitor's goals, seen like the H/D/A bar from the home side.
 
 Four consequences that must not be undone by accident:
 

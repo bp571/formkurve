@@ -25,6 +25,7 @@ from config import (
     team_slug,
 )
 from analysis import page_data
+from details import DETAILS_CSV, EVENTS_CSV, load_csv
 from backtest import outcome_of, probabilities
 from explore_predictors import SKIP_MATCHDAYS, compare
 from predict import (
@@ -717,88 +718,163 @@ def match_probabilities(rows, season):
 
 
 # A win the forecast gave less than one in four. The same floor marks the
-# "Überraschung" badge in the team panels, so the card and the badge agree.
+# "!" behind a score in the team panels, so the sheet and the panels agree.
 SURPRISE_MAX_P = 0.25
 
 
-def surprise_card(rows, table, matchday, logos):
-    """The win of the latest matchday that the forecast gave the smallest chance,
-    with the numbers a reader needs to check it: the pre-match percentages and
-    both sides' form and table place before and after.
+def match_detail_data(rows):
+    """Kickoff, ground, attendance and half-time score per match, and its goals
+    in the order they fell. Both empty on a clone without the detail files,
+    and the sheet then renders without strips and meta lines."""
+    ids = {r["match_id"] for r in rows}
+    details = {d["match_id"]: d for d in load_csv(DETAILS_CSV) if d["match_id"] in ids}
+    goals = defaultdict(list)
+    for e in load_csv(EVENTS_CSV):
+        if e["match_id"] in ids and e["type"] == "goal":
+            goals[e["match_id"]].append(e)
+    # The running score orders the goals, whatever the minutes say.
+    return details, {mid: sorted(gs, key=lambda e: int(e["score_home"]) + int(e["score_away"]))
+                     for mid, gs in goals.items()}
 
-    Wins only. A draw is the least likely outcome of every pairing here - it
-    comes out at 13-19% whichever two sides meet - so by probability alone almost
-    every matchday's surprise would be a 1:1: dropped points, but not a story.
-    """
+
+# The strip is TL_W user units wide and stretched to its column, so every
+# stroke is drawn non-scaling and a goal is a tick rather than a dot - a dot
+# would come out as an ellipse. 95 minutes of room: stoppage time gets a
+# little of its own so two late goals do not land on one line.
+TL_W = 400
+
+
+def minute_x(e):
+    m = int(e["minute"]) + 0.35 * int(e["extra"] or 0)
+    return min(m, 95) / 95 * TL_W
+
+
+def swing(goals, hg, ag):
+    """The story of the match, if it has one: the side that won from behind,
+    or the side that led a drawn match - with the span of minutes in which
+    it happened. None when the result was never in the other side's hands."""
+    if not goals:
+        return None
+    if hg != ag:
+        side, note = ("home" if hg > ag else "away"), "gedreht"
+    else:
+        # A draw: the side that led last is the one that let it slip.
+        led = [e for e in goals if int(e["score_home"]) != int(e["score_away"])]
+        if not led:
+            return None
+        last = led[-1]
+        side = "home" if int(last["score_home"]) > int(last["score_away"]) else "away"
+        note = "Führung verspielt"
+    # Span: from the goal that first put `side` into the state the note is about
+    # (behind for a win, in front for a draw) until the goal that ended it last.
+    start = end = None
+    for e in goals:
+        h, a = int(e["score_home"]), int(e["score_away"])
+        own, opp = (h, a) if side == "home" else (a, h)
+        in_state = own < opp if note == "gedreht" else own > opp
+        if in_state and start is None:
+            start = minute_x(e)
+        elif not in_state and start is not None:
+            end = minute_x(e)
+    if start is None or end is None:
+        return None
+    return note, start, end
+
+
+def timeline(goals, top="home", story=None, tall=False):
+    """The 90 minutes as one strip: a tick per goal, the `top` side's goals
+    above the line, the other side's below, the half-time mark in the middle.
+    With `story`, the pen underlines the span of minutes it names."""
+    h = 48 if tall else 36
+    base = 18
+    ticks = []
+    for e in goals:
+        x = minute_x(e)
+        cls = "t" if e["side"] == top else "b"
+        y1, y2 = (4, 14) if cls == "t" else (22, 32)
+        ticks.append(f'<line class="{cls}" x1="{x:.1f}" y1="{y1}" x2="{x:.1f}" y2="{y2}"/>')
+    half = 45 / 95 * TL_W
+    pen = ""
+    if story:
+        _, x1, x2 = story
+        mid = (x1 + x2) / 2
+        pen = f'<path class="pen" d="M{x1:.1f} 39.5 Q{mid:.1f} 42 {x2:.1f} 39"/>'
+    return (f'<svg class="tl" viewBox="0 0 {TL_W} {h}" preserveAspectRatio="none" aria-hidden="true">'
+            f'<line class="base" x1="0" y1="{base}" x2="{TL_W}" y2="{base}"/>'
+            f'<line class="half" x1="{half:.1f}" y1="{base - 5}" x2="{half:.1f}" y2="{base + 5}"/>'
+            f'{"".join(ticks)}{pen}</svg>')
+
+
+def matchday_sheet(rows, matchday, logos, details, goals):
+    """Every match of the latest matchday as one line of a report sheet: both
+    sides and the score, the goal minutes as a strip, kickoff, ground, crowd
+    and half-time underneath, and the pre-match percentages as the same bar
+    the forecast uses. Two notes, each by a fixed rule: a "!" behind a win the
+    forecast gave less than one in four (wins only - a draw is the least
+    likely outcome of every pairing here, so by probability alone almost every
+    matchday's surprise would be a 1:1), and under the strip the minutes in
+    which a match was turned or a lead let slip."""
+    latest = sorted((r for r in rows if int(r["matchday"]) == matchday),
+                    key=lambda r: (r["date"], r["home_team"]))
+    if not latest:
+        return '<div class="card sheet"><p class="none">Noch kein Spiel.</p></div>'
     probs = {}
     for r, diff in walk_forward(rows):
         if int(r["matchday"]) == matchday:
             probs[r["match_id"]] = probabilities(diff, calibration())
-    if not probs:
-        return ('<div class="card surprise"><p class="none">Noch keine Prognose – dafür braucht '
-                'es zwei gespielte Spieltage.</p></div>')
 
-    best = None
-    for r in rows:
-        if int(r["matchday"]) != matchday or r["match_id"] not in probs:
-            continue
+    items = []
+    for r in latest:
+        mid = r["match_id"]
         hg, ag = int(r["home_goals"]), int(r["away_goals"])
-        if hg == ag:
-            continue
-        p_win = probs[r["match_id"]][2 if hg > ag else 0]
-        if p_win < SURPRISE_MAX_P and (best is None or p_win < best[1]):
-            best = (r, p_win)
-    if best is None:
-        return ('<div class="card surprise"><p class="none">Diesen Spieltag keine – jeder Sieg '
-                'hatte vorher mindestens eine Chance von eins zu vier.</p></div>')
+        gs = goals.get(mid, [])
+        d = details.get(mid)
+        story = swing(gs, hg, ag)
 
-    r, p_win = best
-    p_away, p_draw, p_home = probs[r["match_id"]]
-    home_won = int(r["home_goals"]) > int(r["away_goals"])
-    winner = r["home_team"] if home_won else r["away_team"]
+        sides = ""
+        for side, key, g in (("h", "home_team", hg), ("a", "away_team", ag)):
+            bang = ""
+            if mid in probs and hg != ag and g == max(hg, ag):
+                p_win = probs[mid][2 if hg > ag else 0]
+                if p_win < SURPRISE_MAX_P:
+                    bang = '<span class="bang">!</span>'
+            sides += (f'<div class="fxt {side}">{crest_img(logos, r[key])}'
+                      f'<span>{html.escape(r[key])}</span></div>'
+                      f'<b class="mg {side}">{g}{bang}</b>')
 
-    # Form and table place as they stood before this matchday, against where
-    # they are now - the first says why it was a surprise, the second what it
-    # did. Form as the number, not the rank: a bottom side stays fourteenth
-    # after its upset, but its form moves, and that is the point.
-    before, _ = build_table([x for x in rows if int(x["matchday"]) < matchday])
-    ranks = {}
-    for tab, key in ((before, "pre"), (table, "post")):
-        for t in tab:
-            ranks.setdefault(t["team"], {})[key] = (t["form"], t["position"])
+        strip = ""
+        if gs or (d and hg + ag == 0):
+            note = ""
+            if story:
+                text, x1, x2 = story
+                # Anchored at the minute the swing ended and written leftwards
+                # from there; early in the match there is no room to the left,
+                # so the note starts at the swing instead.
+                if x2 > TL_W * 0.4:
+                    note = f'<span class="badge plain swing" style="left:{x2 / TL_W:.1%}">{text}</span>'
+                else:
+                    note = f'<span class="badge plain swing from" style="left:{x1 / TL_W:.1%}">{text}</span>'
+            strip = f'<div class="mtl">{timeline(gs, "home", story, tall=True)}{note}</div>'
 
-    sides = "".join(
-        f'<div class="fxt{" win" if r[side] == winner else ""}">{crest_img(logos, r[side])}'
-        f'<span>{html.escape(r[side])}</span></div>' for side in ("home_team", "away_team")
-    )
-    bar = "".join(f'<i class="{cls}" style="width:{p:.1%}"></i>'
-                  for cls, p in (("w", p_home), ("d", p_draw), ("l", p_away)))
-    pcts = " · ".join(
-        f'<b>{label} {pct(p)}</b>' if won else f'{label} {pct(p)}'
-        for label, p, won in (("Heim", p_home, home_won), ("Remis", p_draw, False),
-                              ("Auswärts", p_away, not home_won))
-    )
-    facts = []
-    for side in ("home_team", "away_team"):
-        team = r[side]
-        (f0, t0), (f1, t1) = ranks[team]["pre"], ranks[team]["post"]
-        facts.append(
-            f'<tr><td class="l">{html.escape(team)}</td>'
-            f'<td>{num(f0)} <span class="to">→ {num(f1)}</span></td>'
-            f'<td>{t0}. <span class="to">→ {t1}.</span></td></tr>'
-        )
-    n = sum(1 for x in rows if int(x["matchday"]) == matchday)
-    return f"""<div class="card surprise">
-          <div class="smatch">{sides}<b class="score">{r["home_goals"]}:{r["away_goals"]}</b></div>
-          <div class="bar">{bar}</div>
-          <p class="sprob">Vorher: {pcts}</p>
-          <table class="sfacts">
-            <thead><tr><th class="l">Vorher → jetzt</th><th>Form</th><th>Tabelle</th></tr></thead>
-            <tbody>{"".join(facts)}</tbody>
-          </table>
-          <p class="hint">{html.escape(winner)} gewinnt mit einer Chance von {pct(p_win)} vorher –
-          von den {n} Spielen des Spieltags der Sieg, den das Modell am wenigsten erwartet hat.</p>
-        </div>"""
+        meta = [short_date(r["date"])]
+        if d:
+            meta += [d["kickoff"], d["surface"], f'{d["attendance"]} Zuschauer',
+                     f'Halbzeit {d["ht_home"]}:{d["ht_away"]}']
+        meta_html = f'<p class="mmeta">{html.escape(", ".join(m for m in meta if m))}</p>'
+
+        prob_html = ""
+        if mid in probs:
+            p_away, p_draw, p_home = probs[mid]
+            bar = "".join(f'<i class="{cls}" style="width:{p:.1%}"></i>'
+                          for cls, p in (("w", p_home), ("d", p_draw), ("l", p_away)))
+            outcome = outcome_of(hg, ag)
+            labels = [(pct(p_home), "Heim", 2), (pct(p_draw), "Remis", 1), (pct(p_away), "Auswärts", 0)]
+            text = ", ".join(f"<b>{v} {k}</b>" if o == outcome else f"{v} {k}" for v, k, o in labels)
+            prob_html = f'<div class="mprob"><div class="bar">{bar}</div><span>vorher {text}</span></div>'
+
+        items.append(f'<div class="mt">{sides}{strip}{meta_html}{prob_html}</div>')
+
+    return f'<div class="card sheet">{"".join(items)}</div>'
 
 
 def surface_section(surface):
@@ -844,7 +920,7 @@ def comeback_section(marks, first, logos):
         ("dropped", "Führung verspielt", "pts_dropped_leading", "led", "Führungen liegen gelassen"),
     ):
         if marks[key] is None:
-            lines.append(f'<div class="cb"><span class="badge">{label}</span>'
+            lines.append(f'<div class="cb"><span class="badge plain">{label}</span>'
                          f'<p class="none">diesen Spieltag keines</p></div>')
             continue
         team, t = marks[key]
@@ -854,7 +930,7 @@ def comeback_section(marks, first, logos):
         if key == "comeback" and t["won_after_trailing"]:
             extra = f', {t["won_after_trailing"]} davon noch gewonnen'
         lines.append(
-            f'<div class="cb"><span class="badge">{label}</span>'
+            f'<div class="cb"><span class="badge plain">{label}</span>'
             f'<div class="fxt">{crest_img(logos, team)}<span>{html.escape(team)}</span></div>'
             f'<p><b>{t[pts]} Punkte</b> aus {t[n]} {noun}{extra}.</p></div>'
         )
@@ -895,12 +971,13 @@ def team_stats_by_venue(rows, team):
     return home, away
 
 
-def team_details_html(table, rows, logos, season, matchdays, match_probs):
+def team_details_html(table, rows, logos, season, matchdays, match_probs, goals):
     """One section with a team dropdown and one panel per team, all hidden except
     rank 0; the dropdown switches panels.
 
     Each panel shows: head (crest, form rank, form, power, position, W-D-L split),
-    season chart (highlighted), results list with probabilities, remaining fixtures."""
+    season chart (highlighted), results list with goal strips and probabilities,
+    remaining fixtures."""
 
     options = "".join(
         f'<option value="{rank}">{rank + 1}. {html.escape(t["team"])}</option>'
@@ -961,10 +1038,10 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
 
                 # The column always shows the same thing - this team's chance of
                 # winning, as the model saw it before kick-off - so a reader can
-                # compare rows. The surprise note marks a win the model gave
-                # less than a one-in-four chance - the rule of the matchday card.
+                # compare rows. The "!" behind the score marks a win the model
+                # gave less than a one-in-four chance - the rule of the sheet.
                 prob_txt = "–"
-                surprise_badge = ""
+                bang = ""
                 for idx, (wf_r, _) in enumerate(walk_forward(rows)):
                     if (wf_r["date"] == r["date"] and
                         wf_r["home_team"] == r["home_team"] and
@@ -973,8 +1050,11 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
                             p = match_probs[idx]
                             prob_txt = pct(p[2] if is_home else p[0])
                             if hg != ag and p[outcome] < SURPRISE_MAX_P:
-                                surprise_badge = '<span class="badge">Überraschung</span>'
+                                bang = '<span class="bang">!</span>'
                         break
+                # The strip seen from this team: its own goals above the line.
+                gs = goals.get(r["match_id"], [])
+                strip = timeline(gs, "home" if is_home else "away") if gs or hg + ag == 0 else ""
 
                 # Read from this team's side: 2:1 away is a loss, and the reader
                 # should not have to work that out from the H/A marker.
@@ -987,15 +1067,17 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
                     f'<tr><td class="md">{r["matchday"]}</td>'
                     f'<td class="dt">{short_date(r["date"])}</td>'
                     f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span></td>'
-                    f'<td class="sc"><span class="res {res}">{res_letter}</span>{score}</td>'
-                    f'<td class="pr">{prob_txt}{surprise_badge}</td></tr>'
+                    f'<td class="sc"><span class="res {res}">{res_letter}</span>{score}{bang}</td>'
+                    f'<td class="vl">{strip}</td>'
+                    f'<td class="pr">{prob_txt}</td></tr>'
                 )
 
             results_html = f"""    <h3>Bisherige Ergebnisse</h3>
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Siegchance vorher</th></tr>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Verlauf</th>
+          <th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
           {"".join(results)}
@@ -1004,8 +1086,11 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs):
     </div>
     <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
     <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A: zu Hause oder
-    auswärts. <strong>Siegchance vorher</strong> ist, wie wahrscheinlich das Modell vor dem
-    Anpfiff einen Sieg dieses Teams fand.</p>
+    auswärts. <strong>Verlauf</strong>: ein Strich je Tor, oben die eigenen, unten die des
+    Gegners, der Querstrich ist die Halbzeit. <strong>Siegchance vorher</strong> ist, wie
+    wahrscheinlich das Modell vor dem Anpfiff einen Sieg dieses Teams fand; ein
+    <span class="bang inline">!</span> steht hinter einem Sieg, dem es weniger als ein Viertel
+    gab.</p>
 """
 
         # Remaining fixtures
@@ -1097,9 +1182,11 @@ def forecast_section(season, played, logos, forms, scheduled=None):
         )
         bar = "".join(f'<i class="{cls}" style="width:{t[key]:.1%}"></i>'
                       for cls, key in (("w", "p_home"), ("d", "p_draw"), ("l", "p_away")))
-        mark = '<span class="badge">Topspiel</span>' if i == top else ""
+        # Underlined rather than ringed: the ring is reserved for the team of
+        # the hour, and a fixture someone means to watch gets a line under it.
+        mark = '<span class="badge ul">Topspiel</span>' if i == top else ""
         body.append(
-            f'<tr class="{"hl marked" if i == top else ""}">'
+            f'<tr class="{"hl" if i == top else ""}">'
             f'<td class="l dt">{short_date(t["date"])}</td>'
             f'<td class="l fx">{sides}<div class="bar">{bar}</div>{mark}</td>'
             f'{cells}'
@@ -1171,14 +1258,14 @@ def simulation_section(season, rows, logos, scheduled):
         first_bar = f'<i class="up" style="width:{p_first:.1%}"></i>' if p_first > 0.005 else ""
         bottom_bar = f'<i class="down" style="width:{p_bottom2:.1%}"></i>' if p_bottom2 > 0.005 else ""
 
-        first_pct = f"{round(p_first * 100)}%" if p_first >= 0.005 else "&lt;1%"
-        bottom_pct = f"{round(p_bottom2 * 100)}%" if p_bottom2 >= 0.005 else "&lt;1%"
+        first_pct = pct(p_first) if p_first >= 0.005 else "&lt;1&nbsp;%"
+        bottom_pct = pct(p_bottom2) if p_bottom2 >= 0.005 else "&lt;1&nbsp;%"
 
         crest = logos.get(team_slug(team))
         crest_html = f'<img class="lg sm" src="{crest}" alt="">' if crest else ""
 
         body.append(
-            f'<tr><td class="l">{crest_html}<span>{html.escape(team)}</span></td>'
+            f'<tr><td class="l"><div class="fxt">{crest_html}<span>{html.escape(team)}</span></div></td>'
             f'<td>{pts}</td><td>{exp_pts}</td>'
             f'<td><div class="bar">{first_bar}</div>{first_pct}</td>'
             f'<td><div class="bar">{bottom_bar}</div>{bottom_pct}</td></tr>'
@@ -1281,12 +1368,18 @@ def method_section(has_future):
     Spieltag, mindestens 1,5 Punkte, und nie auf derselben Zeile. Sind die Abstände kleiner,
     bleiben die Marker weg – ein Platz oder ein halber Punkt liegt im Zufall.</p>
 
-    <h3>Überraschung des Spieltags</h3>
-    <p>Dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu diesem
-    Spieltag: der Sieg, dem sie vorher die kleinste Chance gab, wenn sie unter
-    {pct(SURPRISE_MAX_P)} lag. Unentschieden zählen nicht, weil das Remis hier in jeder
-    Paarung die unwahrscheinlichste Variante ist – sonst wäre fast jede Woche ein 1:1 die
-    Überraschung. Dieselbe Regel markiert die Überraschungen im Reiter Team im Detail.</p>
+    <h3>Spieltag</h3>
+    <p>Jedes Spiel des letzten Spieltags als eine Zeile des Spielberichts: die Torminuten als
+    Striche auf einer Linie von Anpfiff bis Abpfiff, oben die Tore des Gastgebers, unten die des
+    Gastes, der Querstrich ist die Halbzeit. Darunter Anstoß, Platz, Zuschauer und Halbzeitstand
+    von fussball.de, und dieselbe Prognose wie im Reiter Prognose, nur aus den Ergebnissen bis zu
+    diesem Spieltag. Drei Notizen nach fester Regel: ein <span class="bang inline">!</span>
+    hinter einem Sieg, dem die Prognose vorher weniger als {pct(SURPRISE_MAX_P)} gab –
+    Unentschieden zählen nicht, weil das Remis hier in jeder Paarung die unwahrscheinlichste
+    Variante ist, sonst wäre fast jede Woche ein 1:1 die Überraschung. <em>gedreht</em> unter
+    den Minuten, in denen der spätere Sieger zurücklag, vom Tor, das ihn in Rückstand brachte,
+    bis zum Ausgleich. <em>Führung verspielt</em> bei einem Remis unter den Minuten, in denen
+    das zuletzt führende Team vorn lag.</p>
 
     <h3>Belag und Heimbonus</h3>
     <p>Aus den Spielberichten: Tore pro Spiel und Heimbonus je Belag, über alle Saisons
@@ -1308,8 +1401,10 @@ def method_section(has_future):
 
     <h3>Team im Detail</h3>
     <p><strong>Siegchance vorher</strong> ist die Prognose für dieses Spiel, gerechnet nur aus
-    den Ergebnissen bis dahin, aus Sicht dieses Teams. Als <strong>Überraschung</strong> gilt
-    ein Sieg unter {pct(SURPRISE_MAX_P)}, dieselbe Regel wie oben. <strong>Stärke</strong> bei
+    den Ergebnissen bis dahin, aus Sicht dieses Teams. Das <span class="bang inline">!</span>
+    hinter einem Ergebnis folgt derselben Regel wie auf dem Spieltagsbogen: ein Sieg unter
+    {pct(SURPRISE_MAX_P)}. <strong>Verlauf</strong> ist derselbe Strich wie dort, nur aus Sicht
+    dieses Teams – die eigenen Tore oben. <strong>Stärke</strong> bei
     den verbleibenden Gegnern ist deren Saisonwert. Der Saisonverlauf zeigt den Saisonwert nach
     jedem Spieltag; die anderen Teams bleiben grau zum Vergleich.</p>
 
@@ -1432,9 +1527,11 @@ def render(season, rows, matchday_n=None):
 
     # Team detail panels: only render for current season
     # and generate HTML for each team's detail section
+    details, goals = match_detail_data(played)
     if season == SEASON_CURRENT:
         match_probs = match_probabilities(played, season)
-        team_panels_html = team_details_html(table, played, logos, season, matchdays, match_probs)
+        team_panels_html = team_details_html(table, played, logos, season, matchdays,
+                                             match_probs, goals)
     else:
         team_panels_html = ""
 
@@ -1519,14 +1616,20 @@ def render(season, rows, matchday_n=None):
             f"</tr>"
         )
 
-    # The right column: on the current season the matchday's surprise, on an
-    # archive page the form chart - a finished season has no "this weekend",
-    # and its forecast calibration (the season before it) is not loaded.
+    # The right column: on the current season the latest matchday as a report
+    # sheet, on an archive page the form chart - a finished season has no
+    # "this weekend", and its forecast calibration (the season before it) is
+    # not loaded.
     if season == SEASON_CURRENT:
-        side_section = f"""<h2>Überraschung des Spieltags</h2>
-        <p class="sub">Der Sieg dieses Spieltags, dem die Prognose vorher die geringste Chance gab.
-        Unentschieden zählen nicht.</p>
-        {surprise_card(played, table, matchday, logos)}"""
+        side_section = f"""<h2>Spieltag {matchday}</h2>
+        <p class="sub">Alle Spiele des letzten Spieltags mit ihren Torminuten. Die Notizen
+        folgen festen Regeln, keinem Urteil.</p>
+        {matchday_sheet(played, matchday, logos, details, goals)}
+        <p class="hint">Ein Strich je Tor, oben der Gastgeber, unten der Gast, der Querstrich
+        ist die Halbzeit. Ein <span class="bang inline">!</span> steht hinter einem Sieg, dem die
+        Prognose vorher weniger als ein Viertel gab – nur Siege, ein Remis ist hier immer das
+        Unwahrscheinlichste. <em>gedreht</em> und <em>Führung verspielt</em> stehen unter den
+        Minuten, in denen es passiert ist.</p>"""
         # Two more cards from the match detail pages, both absent on a clone
         # without data/details.csv rather than rendered empty.
         surface, marks, first = page_data(played, season)
@@ -1582,28 +1685,16 @@ def render(season, rows, matchday_n=None):
     --mark:#7a4a09; --mark-bg:#f6e2bc; --mark-line:#e6cb96;
   }}
   * {{ box-sizing:border-box; }}
-  /* The stock itself, then what has happened to it. Top three layers are four
-     coffee marks in fixed places, so the sheet looks the same from one matchday
-     to the next; under them the sparse dark flecks of recycled paper and a fine
-     fibre grain, both drawn by the browser rather than shipped as images. All
-     of it sits on the ground only - every card and the pitch are opaque. */
+  /* The stock itself: the sparse dark flecks of recycled paper and a fine
+     fibre grain, both drawn by the browser rather than shipped as images. The
+     pen marks on the sheet are the only wear it shows - the coffee rings that
+     used to sit here competed with them and were too faint to read anyway.
+     All of it sits on the ground only - every card and the pitch are opaque. */
   body {{ margin:0; background-color:var(--paper); color:var(--ink);
          font:16.5px/1.62 var(--body); -webkit-font-smoothing:antialiased;
-         background-repeat:no-repeat, no-repeat, no-repeat, no-repeat,
-                           repeat, repeat;
-         background-size:186px 168px, 118px 112px, 148px 132px, 96px 92px,
-                         240px 240px, 190px 190px;
-         background-position:5% 2.4%, 93% 5%, 86% 71%, 11% 92%, 0 0, 0 0;
+         background-repeat:repeat, repeat;
+         background-size:240px 240px, 190px 190px;
          background-image:
-           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,0) 0 43%,
-             rgba(122,84,40,.075) 45% 49%, rgba(122,84,40,.03) 50.5% 54%,
-             rgba(122,84,40,0) 56%),
-           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,0) 0 45%,
-             rgba(122,84,40,.06) 47% 51%, rgba(122,84,40,0) 53%),
-           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,.032) 0 34%,
-             rgba(122,84,40,.05) 44% 48%, rgba(122,84,40,0) 51%),
-           radial-gradient(ellipse at 50% 50%, rgba(122,84,40,.045) 0 30%,
-             rgba(122,84,40,0) 64%),
            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='7' intercept='-4.85'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)' opacity='0.5'/%3E%3C/svg%3E"),
            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55 1.3' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='190' height='190' filter='url(%23p)' opacity='0.115'/%3E%3C/svg%3E"); }}
   .wrap {{ max-width:1760px; margin:0 auto; padding:0 clamp(16px,2.4vw,36px); }}
@@ -1775,6 +1866,22 @@ def render(season, rows, matchday_n=None):
             border-radius:47% 53% 44% 56%/62% 58% 42% 38%; }}
   .badge::after {{ border-radius:53% 47% 57% 43%/45% 40% 60% 55%;
             transform:rotate(1.3deg) scale(1.035); opacity:.5; }}
+  /* One gesture per kind of note, so the reader can tell them apart before
+     reading them: the ring above is for the team of the hour only. A plain
+     note is just handwriting in the margin (the season's comeback counts, the
+     minutes a match turned in); the underline is for a fixture someone means
+     to watch; the "!" behind a score is what one writes next to a result
+     nobody expected. All in the same amber, all out of flow. */
+  .badge.plain {{ padding:0; }}
+  .badge.plain::before, .badge.plain::after {{ display:none; }}
+  .badge.ul {{ padding:0 3px 6px; transform:rotate(-2deg);
+               background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 6' preserveAspectRatio='none'%3E%3Cpath d='M1 3.5C20 2 35 4.5 50 3S80 1.5 99 3.2' fill='none' stroke='rgba(122,74,9,.62)' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat bottom/100% 6px; }}
+  .badge.ul::before, .badge.ul::after {{ display:none; }}
+  .bang {{ position:absolute; left:100%; top:-9px; margin-left:2px;
+           font:700 27px/1 var(--hand); color:var(--mark);
+           transform:rotate(7deg); pointer-events:none; }}
+  .bang.inline {{ position:static; display:inline-block; font-size:21px;
+                  vertical-align:-3px; margin:0 1px; }}
   /* Drawn outside the ring and clear of the digits, so the note reaches the
      column it is about without covering anything measured. */
   .arw {{ position:absolute; left:100%; top:-3px; width:46px; height:21px;
@@ -1796,15 +1903,12 @@ def render(season, rows, matchday_n=None):
   .fcast tr.base > td {{ border-top:2px solid var(--ink); }}
   .fcast td.l:first-child + td {{ font-family:var(--body); }}
   .fcast .pm {{ font-size:12.5px; }}
-  /* The highlighter carries the marking here, so no tinted row underneath it,
-     and the strokes get their own lengths - two rows marked identically would
-     look stamped rather than written. */
+  /* A pen stroke down the margin marks the fixture, no highlighter: that one
+     is the team of the hour's. */
   .fcast tr.hl > td:first-child {{ box-shadow:inset 3px 0 0 var(--mark); }}
-  .fcast tr.marked {{ background-size:56% 58%, 38% 34%;
-            background-position:3% 34%, 14% 78%; }}
   /* In the empty right half of the fixture cell, clear of both club names. */
   .fx .badge {{ left:auto; right:5%; bottom:auto; top:50%;
-                transform:translateY(-50%) rotate(-4.8deg); }}
+                transform:translateY(-50%) rotate(-2deg); }}
   .fxt {{ display:flex; align-items:center; gap:8px; line-height:1.3; }}
   .fxt span {{ font-weight:600; }}
   .fxt + .fxt {{ margin-top:3px; }}
@@ -1880,25 +1984,44 @@ def render(season, rows, matchday_n=None):
   /* The season score is context, not the headline: same column width, quieter. */
   td.season {{ color:var(--muted); font-weight:600; }}
 
-  /* ---- Surprise of the matchday ------------------------------------------- */
-  /* One result set like a line of the forecast table: both clubs, the score in
-     the display face, the pre-match percentages as the same three-colour bar. */
-  .surprise {{ padding:16px 18px; }}
-  .surprise .none {{ margin:0; color:var(--muted); }}
-  .smatch {{ display:grid; grid-template-columns:1fr auto; align-items:center;
-             column-gap:16px; }}
-  .smatch .fxt {{ grid-column:1; }}
-  .smatch .fxt.win span {{ color:var(--up); }}
-  .smatch .score {{ grid-column:2; grid-row:1 / span 2; font:700 34px var(--display);
-                    font-variant-numeric:tabular-nums; }}
-  .surprise .bar {{ max-width:none; margin-top:12px; }}
-  .sprob {{ margin:6px 0 0; color:var(--muted); font-size:14px; }}
-  .sprob b {{ color:var(--ink); }}
-  .sfacts {{ margin-top:12px; }}
+  /* ---- The matchday sheet -------------------------------------------------- */
+  /* One match per line of the sheet, the way a report form lists them: the two
+     sides with their goals on the left, the minute strip beside them spanning
+     both rows, the kick-off line and the pre-match bar underneath. */
+  .sheet {{ padding:2px 18px 4px; }}
+  .sheet .none {{ margin:12px 0; color:var(--muted); }}
+  .mt {{ display:grid; column-gap:12px; row-gap:1px; align-items:center;
+         grid-template-columns:minmax(0,1fr) auto minmax(150px,44%);
+         grid-template-areas:"h hg tl" "a ag tl" "meta meta meta" "prob prob prob";
+         padding:13px 0 14px; }}
+  .mt + .mt {{ border-top:1px solid var(--line); }}
+  .mt .fxt {{ min-width:0; }}
+  .mt .fxt span {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+  .mt .fxt.h {{ grid-area:h; }} .mt .fxt.a {{ grid-area:a; }}
+  .mg {{ position:relative; font:700 22px/1.2 var(--display); text-align:right;
+         font-variant-numeric:tabular-nums; padding-right:4px; }}
+  .mg.h {{ grid-area:hg; }} .mg.a {{ grid-area:ag; }}
+  .mtl {{ grid-area:tl; position:relative; align-self:stretch; padding-left:14px; }}
+  .mtl svg {{ position:absolute; inset:0 0 0 14px; width:calc(100% - 14px); height:100%; }}
+  /* Under the strip at the minute the swing ended, written back from there. */
+  .mtl .badge {{ bottom:-6px; font-size:15px; transform:translateX(-100%) rotate(-2.5deg); }}
+  .mtl .badge.from {{ transform:rotate(-2.5deg); }}
+  .mmeta {{ grid-area:meta; margin:5px 0 0; color:var(--muted); font-size:13.5px; }}
+  .mprob {{ grid-area:prob; display:flex; align-items:center; flex-wrap:wrap;
+            gap:4px 12px; margin-top:3px; }}
+  .mprob .bar {{ margin:0; flex:0 1 170px; }}
+  .mprob span {{ color:var(--muted); font-size:13px; }}
+  .mprob b {{ color:var(--ink); }}
+  /* The strip's strokes are non-scaling, so it is the same pen at any width. */
+  .tl {{ display:block; overflow:visible; }}
+  .tl line, .tl path {{ vector-effect:non-scaling-stroke; stroke-linecap:round; fill:none; }}
+  .tl .base {{ stroke:var(--line); stroke-width:1.5; }}
+  .tl .half {{ stroke:var(--muted); stroke-width:1.5; }}
+  .tl .t {{ stroke:var(--up); stroke-width:2.6; }}
+  .tl .b {{ stroke:var(--down); stroke-width:2.6; }}
+  .tl .pen {{ stroke:rgba(122,74,9,.62); stroke-width:1.8; }}
   .sfacts th, .sfacts td {{ padding:6px 5px; }}
   .sfacts td.l {{ text-align:left; font-family:var(--body); font-weight:600; }}
-  .sfacts .to {{ color:var(--muted); font-weight:400; }}
-  .surprise .hint {{ margin-top:12px; }}
 
   /* ---- Pitch surface and comebacks, under the surprise ------------------- */
   .chartcol h3 {{ margin:26px 0 8px; font:600 17px/1.2 var(--display); }}
@@ -2004,7 +2127,11 @@ def render(season, rows, matchday_n=None):
   .tres .dt {{ width:80px; color:var(--muted); }}
   .tres .opp, .tres .vs {{ font-weight:600; }}
   .tres .vs {{ color:var(--muted); font-size:12px; margin-left:3px; }}
-  .tres .sc {{ width:80px; font-weight:600; white-space:nowrap; }}
+  .tres .sc {{ width:80px; font-weight:600; white-space:nowrap; position:relative; }}
+  .tres .sc .bang {{ left:auto; position:static; display:inline-block; font-size:22px;
+                     vertical-align:-3px; margin-left:3px; }}
+  .tres .vl {{ width:150px; padding-top:4px; padding-bottom:4px; }}
+  .tres .vl .tl {{ width:150px; height:34px; }}
   .tres .pr, .tres .pw {{ color:var(--muted); width:80px; }}
   /* Result from the team's side, in the same three colours as the form dots. */
   .res {{ display:inline-block; width:18px; height:18px; margin-right:7px; border-radius:2px;
@@ -2012,18 +2139,19 @@ def render(season, rows, matchday_n=None):
   .res.w {{ background:var(--up); }}
   .res.d {{ background:var(--draw); color:var(--ink); }}
   .res.l {{ background:var(--down); }}
-  .tdet .badge {{ position:relative; left:auto; right:auto; transform:none; }}
 
   /* ---- Season simulation -------------------------------------------------- */
   .sim table {{ width:100%; }}
   .sim th {{ text-align:center; }}
-  .sim th.l {{ text-align:left; }}
-  .sim td.l {{ display:flex; align-items:center; gap:8px; }}
-  .sim td.l span {{ font-weight:600; }}
+  .sim th.l, .sim td.l {{ text-align:left; }}
   .sim td {{ padding:8px; text-align:right; }}
-  .sim .bar {{ display:flex; height:5px; max-width:180px; margin:5px 0 2px;
+  /* One filled length per cell, right-aligned like the figure under it. The
+     title chance in the above-average green, the drop in wine: the two
+     meanings the page already gives those colours. */
+  .sim .bar {{ display:flex; height:5px; width:84px; margin:5px 0 2px auto;
               overflow:hidden; background:var(--track); }}
-  .sim .bar i {{ flex-grow:1; }}
+  .sim .bar i.up {{ background:var(--up); }}
+  .sim .bar i.down {{ background:var(--down); }}
 
   /* Two columns as soon as the table fits next to the chart without scrolling. */
   @media (min-width:1400px) {{
@@ -2061,10 +2189,19 @@ def render(season, rows, matchday_n=None):
     .pwrap svg {{ min-width:700px; }}
     /* Handwriting needs more size than a grotesque to stay legible, so the
        badge gives up padding on a phone rather than point size. A narrow cell
-       has no spare width beside the record, so the note hangs off the bottom
-       left of the name block instead - still out of flow, still over the rule. */
-    .badge {{ font-size:14px; padding:1px 10px 2px; left:30px; bottom:-9px;
+       has no spare width beside the record, so the note sits on the rule
+       under the row, half on this row's bottom padding and half on the next
+       one's top - still out of flow, and clear of the record it used to cover. */
+    .badge {{ font-size:14px; padding:1px 10px 2px; left:30px; bottom:-12px;
               transform:rotate(-3.4deg); }}
+    .bang {{ font-size:23px; top:-7px; }}
+    /* The strip gets its own line under the two sides; beside them it would
+       be a hundred pixels wide. */
+    .mt {{ grid-template-columns:minmax(0,1fr) auto;
+           grid-template-areas:"h hg" "a ag" "tl tl" "meta meta" "prob prob"; }}
+    .mtl {{ height:52px; padding-left:0; margin-top:4px; }}
+    .mtl svg {{ inset:0; width:100%; }}
+    .tres .vl {{ display:none; }}
     /* No free space beside the clubs at this width - the note covered a name -
        so it moves out into the date column, under the kick-off, and reads as
        written in the margin. */
