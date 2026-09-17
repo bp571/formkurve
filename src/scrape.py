@@ -81,13 +81,14 @@ def count_matchdays(html: str) -> int:
     return max(numbers)
 
 
-def fetch_season(season: str, use_cache: bool = False):
-    """Yield (matchday, html) for every matchday of the season. A matchday the
-    server refuses to serve yields None so the rest of the season still runs."""
+def fetch_season(season: str, use_cache: bool = False, max_matchday: int = None):
+    """Yield (matchday, html) for every matchday of the season, or only up to
+    max_matchday if given. A matchday the server refuses to serve yields None
+    so the rest of the season still runs."""
     total = None
     failed = []
     matchday = 1
-    while total is None or matchday <= total:
+    while (total is None or matchday <= total) and (max_matchday is None or matchday <= max_matchday):
         html = _try_fetch(season, matchday, use_cache)
         if html is None:
             failed.append(matchday)

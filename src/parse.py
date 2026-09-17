@@ -125,11 +125,13 @@ def parse_matchday(html: str, season: str, matchday: int) -> List[Dict]:
     return matches
 
 
-def collect_season(season: str, use_cache: bool = False) -> List[Dict]:
+def collect_season(season: str, use_cache: bool = False, max_matchday: int = None) -> List[Dict]:
     """A matchday whose page fussball.de fails to serve is skipped rather than
-    losing the whole run; validate() then reports the gap."""
+    losing the whole run; validate() then reports the gap. max_matchday caps
+    how far into the season this fetches - the caller is responsible for
+    filling in the rest from already-known data before validating."""
     matches: Dict[str, Dict] = {}
-    for matchday, html in fetch_season(season, use_cache):
+    for matchday, html in fetch_season(season, use_cache, max_matchday):
         if html is None:
             continue
         found = parse_matchday(html, season, matchday)

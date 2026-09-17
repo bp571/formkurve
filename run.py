@@ -17,8 +17,9 @@ from config import (  # noqa: E402
     STAFFEL_IDS,
 )
 from details import collect as collect_details  # noqa: E402
-from parse import collect_season, save_matches_csv, validate  # noqa: E402
+from parse import collect_season, parse_matchday, save_matches_csv, validate  # noqa: E402
 from report import build_table, write_season  # noqa: E402
+from scrape import fetch_matchday  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -68,6 +69,26 @@ def rank(season: str):
     return table
 
 
+def find_scrape_bound(season: str, existing):
+    """The last matchday to scrape this run: the last known played one plus
+    one for the forecast, walked forward past any matchday that turns out to
+    already be complete too - a missed run can let more than one matchday go
+    by, and a fixed +1 would silently leave the extra one as 'scheduled'.
+    Capped at the season length already known locally."""
+    played = [int(r["matchday"]) for r in existing if r["status"] == "played"]
+    if not played:
+        return None
+
+    total = max(int(r["matchday"]) for r in existing)
+    bound = min(max(played) + 1, total)
+    while bound < total:
+        found = parse_matchday(fetch_matchday(season, bound), season, bound)
+        if not found or any(m["status"] == "scheduled" for m in found):
+            break
+        bound += 1
+    return bound
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--season", default=SEASON_CURRENT, choices=sorted(STAFFEL_IDS))
@@ -78,7 +99,20 @@ def main():
     )
     args = parser.parse_args()
 
-    matches = collect_season(args.season, use_cache=args.cached)
+    existing = load_season(args.season) if Path(MATCHES_CSV).exists() else []
+    max_matchday = None if args.cached else find_scrape_bound(args.season, existing)
+
+    matches = collect_season(args.season, use_cache=args.cached, max_matchday=max_matchday)
+
+    if max_matchday is not None:
+        fetched_ids = {m["match_id"] for m in matches}
+        tail = [
+            dict(r, matchday=int(r["matchday"]))
+            for r in existing
+            if int(r["matchday"]) > max_matchday and r["match_id"] not in fetched_ids
+        ]
+        matches += tail
+
     matches = apply_overrides(matches, args.season)
     validate(matches, args.season)
     save_matches_csv(matches, MATCHES_CSV)
