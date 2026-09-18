@@ -31,7 +31,7 @@ MANUAL_OVERRIDES_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "ma
 
 REQUEST_DELAY_SECONDS = 4
 REQUEST_TIMEOUT_SECONDS = 20
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (Power Ranking; contact: bene.peiter@gmail.com)"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (Formkurve; contact: bene.peiter@gmail.com)"
 
 # Model parameters. This is the only place they are defined; rating.py and
 # score.py take them as defaults, so a backtest can still override per call.
