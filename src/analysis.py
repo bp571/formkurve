@@ -18,7 +18,7 @@ import argparse
 import sys
 from collections import defaultdict
 
-from config import MATCHES_CSV, SCALE, SEASON_CURRENT, STAFFEL_IDS
+from config import HFA, MATCHES_CSV, SCALE, SEASON_CURRENT, STAFFEL_IDS
 from details import DETAILS_CSV, EVENTS_CSV, load_csv
 from rating import EloRating
 
@@ -227,10 +227,74 @@ def outliers(teams):
     }
 
 
+def scorer_share(rows, events):
+    """Per team: goals scored, how many different players scored them, and the
+    most any one of them scored. Own goals count for the team but have no
+    scorer of its own, so they sit in the total and not among the scorers.
+    Grouped by player id; names never leave this module."""
+    sides = {r["match_id"]: (r["home_team"], r["away_team"]) for r in rows}
+    goals = defaultdict(int)
+    scorers = defaultdict(lambda: defaultdict(int))
+    for e in events:
+        if e["type"] != "goal" or e["match_id"] not in sides:
+            continue
+        team = sides[e["match_id"]][0 if e["side"] == "home" else 1]
+        goals[team] += 1
+        if e["note"] != "Eigentor":
+            scorers[team][e["player_id"]] += 1
+    return {team: {"goals": goals[team], "scorers": len(scorers[team]),
+                   "top": max(scorers[team].values(), default=0),
+                   # Goals per scorer, most first - the shape of the attack
+                   # without a single name in it.
+                   "split": sorted(scorers[team].values(), reverse=True)}
+            for team in goals}
+
+
+# Floors for the bogey opponent: at least two meetings, and a full win less
+# than the pairing's strength expected - anything less is one bad afternoon.
+MIN_BOGEY_MEETINGS = 2
+MIN_BOGEY_DEFICIT = 1.0
+
+
+def bogey_opponents(rows):
+    """Per team the opponent it has fallen furthest short against: Elo
+    expectation of each meeting (season-end ratings, home advantage in) minus
+    the actual score, summed over every meeting on file. An anecdote at these
+    counts, so both floors apply. {team: (opponent, {n, w, d, l, deficit}) | None}."""
+    resid = {}
+    for season in {r["season"] for r in rows}:
+        season_rows = [r for r in rows if r["season"] == season]
+        ratings = season_ratings(season_rows)
+        for r in season_rows:
+            gap = ratings[r["home_team"]] + HFA - ratings[r["away_team"]]
+            hg, ag = int(r["home_goals"]), int(r["away_goals"])
+            actual = 1.0 if hg > ag else 0.5 if hg == ag else 0.0
+            resid[r["match_id"]] = actual - 1 / (1 + 10 ** (-gap / SCALE))
+
+    pairs = defaultdict(lambda: {"n": 0, "w": 0, "d": 0, "l": 0, "deficit": 0.0})
+    for r in rows:
+        hg, ag = int(r["home_goals"]), int(r["away_goals"])
+        for team, opp, own, other, sign in ((r["home_team"], r["away_team"], hg, ag, 1),
+                                            (r["away_team"], r["home_team"], ag, hg, -1)):
+            p = pairs[(team, opp)]
+            p["n"] += 1
+            p["w" if own > other else "d" if own == other else "l"] += 1
+            p["deficit"] -= sign * resid[r["match_id"]]
+
+    out = {}
+    for team in {t for t, _ in pairs}:
+        candidates = [(o, p) for (t, o), p in pairs.items()
+                      if t == team and p["n"] >= MIN_BOGEY_MEETINGS]
+        opp, p = max(candidates, key=lambda kv: kv[1]["deficit"], default=(None, None))
+        out[team] = (opp, p) if opp and p["deficit"] >= MIN_BOGEY_DEFICIT else None
+    return out
+
+
 def page_data(played_rows, season):
     """What the page will show: the surface table over every season on file
-    (the current one alone is too thin for it), the two comeback outliers and
-    the first-goal rates for the current season only.
+    (the current one alone is too thin for it), the two comeback outliers,
+    the first-goal rates and the scorer shares for the current season only,
+    and each team's bogey opponent over every season on file.
 
     Args:
         played_rows: all played matches in the current season (already filtered)
@@ -238,12 +302,15 @@ def page_data(played_rows, season):
     """
     details = load_csv(DETAILS_CSV)
     events = load_csv(EVENTS_CSV)
-    surface = surface_effect(played(set(STAFFEL_IDS)), details)
+    all_rows = played(set(STAFFEL_IDS))
+    surface = surface_effect(all_rows, details)
     # Filter comebacks to only the played matches passed in
     match_ids = {r["match_id"] for r in played_rows}
     season_events = [e for e in events if e["match_id"] in match_ids]
     teams, first = comebacks(played_rows, season_events)
-    return surface, outliers(teams), first
+    # Earlier seasons in full, the current one cut like the page it is for.
+    bogey = bogey_opponents([r for r in all_rows if r["season"] != season] + played_rows)
+    return surface, outliers(teams), first, scorer_share(played_rows, season_events), bogey
 
 
 def print_surface(table):
@@ -297,6 +364,21 @@ def main():
             print(f"  {label}: {team} - {t[pts]} Punkte in {t[n]} Spielen")
         else:
             print(f"  {label}: keiner über dem Floor")
+
+    print(f"\nTorschützen, {' + '.join(sorted(seasons))} (Anteil des besten Schützen, ohne Namen)")
+    shares = scorer_share(rows, events)
+    for team, s in sorted(shares.items(), key=lambda kv: -kv[1]["top"] / kv[1]["goals"]):
+        print(f"  {team:<32}{s['goals']:>4} Tore {s['scorers']:>3} Schützen  bester {s['top']:>3}"
+              f"  {s['top'] / s['goals']:>5.0%}")
+
+    print(f"\nAngstgegner, alle Saisons (Floor: {MIN_BOGEY_MEETINGS} Duelle, "
+          f"{MIN_BOGEY_DEFICIT:.0f} Sieg unter Erwartung)")
+    for team, hit in sorted(bogey_opponents(played(set(STAFFEL_IDS))).items()):
+        if hit:
+            opp, p = hit
+            print(f"  {team:<32}{opp:<32}{p['w']}-{p['d']}-{p['l']}  {p['deficit']:+.1f}")
+        else:
+            print(f"  {team:<32}keiner")
     return 0
 
 

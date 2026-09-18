@@ -153,18 +153,22 @@ def track_record(rows):
     params = calibration()
     base = probabilities(0.0, params)
 
-    hits, model_rps, base_rps = 0, [], []
+    # Both tip the most likely outcome, whatever its size - for the base rate
+    # that is the home win every time.
+    hits, base_hits, model_rps, base_rps = 0, 0, [], []
     for r, diff in walk_forward(rows):
         outcome = outcome_of(*goals(r))
         p = probabilities(diff, params)
         hits += max(range(3), key=p.__getitem__) == outcome
+        base_hits += max(range(3), key=base.__getitem__) == outcome
         model_rps.append(rps(p, outcome))
         base_rps.append(rps(base, outcome))
 
     if not model_rps:
         return None
     n = len(model_rps)
-    return {"n": n, "hits": hits, "rps": sum(model_rps) / n, "base_rps": sum(base_rps) / n}
+    return {"n": n, "hits": hits, "base_hits": base_hits,
+            "rps": sum(model_rps) / n, "base_rps": sum(base_rps) / n}
 
 
 SIM_RUNS = 4000
@@ -274,5 +278,5 @@ if __name__ == "__main__":
               f"   {f['xg_home']:.1f}:{f['xg_away']:.1f}")
     record = track_record(played)
     if record:
-        print(f"\nBisher: {record['hits']}/{record['n']} richtig, "
+        print(f"\nBisher: {record['hits']}/{record['n']} richtig, immer Heimsieg {record['base_hits']}/{record['n']}, "
               f"RPS {record['rps']:.4f} gegen {record['base_rps']:.4f} (Basisrate)")
