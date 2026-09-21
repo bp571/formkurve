@@ -109,9 +109,13 @@ def walk_forward(rows):
 @lru_cache(maxsize=None)
 def calibration(season=SEASON_PREVIOUS):
     """Expected-goal difference -> H/D/A, fitted once on a completed season."""
-    return fit_ordered_logistic(
-        [(diff, outcome_of(*goals(r))) for r, diff in walk_forward(load(season))]
-    )
+    samples = [(diff, outcome_of(*goals(r))) for r, diff in walk_forward(load(season))]
+    if not samples:
+        # Without them the fit returns its starting values and every match
+        # reads 31/38/31 - a stale season id or a missing matches.csv must
+        # fail here, not on the page.
+        raise ValueError(f"no played matches for {season} in {MATCHES_CSV}")
+    return fit_ordered_logistic(samples)
 
 
 def next_matchday(scheduled):

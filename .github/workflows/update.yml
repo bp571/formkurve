@@ -12,7 +12,7 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +31,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # The previous season first: the forecast's calibration is fitted on it,
+      # and data/ is not in the repo. From the second run on it comes from the
+      # cache and only the 26 schedule pages are re-fetched.
       - name: Scrape, rate, build pages
-        run: python run.py
+        run: |
+          python run.py --season 2025/26
+          python run.py
 
       - name: Commit and push docs if changed
         run: |
