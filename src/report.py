@@ -288,6 +288,20 @@ def form_series(rows, matchdays, window=FORM_WINDOW):
     return series
 
 
+def opponents_faced(rows, matchdays, forms):
+    """Per team: the form of each opponent it has met, in match order, taken as
+    it stood before the match (the matchday ahead of it). Matchday 1 has no
+    earlier form to read, so it is left out."""
+    form_at = {team: dict(zip(matchdays, f)) for team, f in forms.items()}
+    seen = defaultdict(list)
+    for r in sorted(rows, key=lambda r: (int(r["matchday"]), r["date"])):
+        before = int(r["matchday"]) - 1
+        for team, opp in ((r["home_team"], r["away_team"]), (r["away_team"], r["home_team"])):
+            if before in form_at[opp]:
+                seen[team].append(form_at[opp][before])
+    return dict(seen)
+
+
 def team_stats(rows):
     """Record and goals per team, straight from the results."""
     stats = defaultdict(lambda: {"w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0})
@@ -314,23 +328,76 @@ def team_stats(rows):
     return stats
 
 
-def last5_form(rows, n=5):
-    """Each team's last n results, oldest to newest, as 'w'/'d'/'l' - the same
-    chronological order the Elo replay uses, so the dots read left to right."""
+def match_effects(rows, window=FORM_WINDOW):
+    """{match_id: {team: form points}}: what each match did to the form of its
+    two sides. The form of the window ending at the match's own matchday, minus
+    the form of the same window replayed without that match - so the number is
+    the match's own doing, not the old match that dropped out of the window."""
+    teams = sorted({r[side] for r in rows for side in ("home_team", "away_team")})
+    ordered = sorted(rows, key=lambda r: (r["date"], int(r["matchday"])))
+    by_matchday = defaultdict(list)
+    for r in ordered:
+        by_matchday[int(r["matchday"])].append(r)
+
+    def replay(md, skip=None):
+        elo = EloRating()
+        elo.initialize_teams(teams)
+        # Chronological order across the window, as in the full replay.
+        in_window = sorted((r for m in range(md - window + 1, md + 1) for r in by_matchday[m]),
+                           key=lambda r: (r["date"], int(r["matchday"])))
+        for r in in_window:
+            if r is not skip:
+                elo.update_from_match(r["home_team"], r["away_team"],
+                                      int(r["home_goals"]), int(r["away_goals"]),
+                                      int(r["matchday"]))
+        return elo.get_ratings()
+
+    full, out = {}, {}
+    for r in rows:
+        md = int(r["matchday"])
+        if md not in full:
+            full[md] = replay(md)
+        without = replay(md, skip=r)
+        out[r["match_id"]] = {t: to_power(full[md][t]) - to_power(without[t])
+                              for t in (r["home_team"], r["away_team"])}
+    return out
+
+
+def effect_html(x):
+    """A form effect as a signed, coloured number."""
+    cls = "up" if x > 0.05 else ("down" if x < -0.05 else "flat")
+    return f'<span class="{cls}">{"+" if x >= 0 else "−"}{num(abs(x))}</span>'
+
+
+def last5_form(rows, effects, n=5):
+    """Each team's last n results, oldest to newest, as ('w'/'d'/'l', match) -
+    the same chronological order the Elo replay uses, so the dots read left to
+    right. `match` is what the hover card shows: matchday, date, both sides, the
+    score, whether this team played at home and what the match did to its form."""
     history = defaultdict(list)
     for r in sorted(rows, key=lambda r: (r["date"], int(r["matchday"]))):
         hg, ag = int(r["home_goals"]), int(r["away_goals"])
         h, a = r["home_team"], r["away_team"]
-        if hg > ag:
-            history[h].append("w")
-            history[a].append("l")
-        elif hg < ag:
-            history[h].append("l")
-            history[a].append("w")
-        else:
-            history[h].append("d")
-            history[a].append("d")
+        match = {"md": r["matchday"], "date": short_date(r["date"]),
+                 "home": h, "away": a, "hg": hg, "ag": ag}
+        rh, ra = ("w", "l") if hg > ag else (("l", "w") if hg < ag else ("d", "d"))
+        fx = effects[r["match_id"]]
+        history[h].append((rh, {**match, "at_home": True, "effect": fx[h]}))
+        history[a].append((ra, {**match, "at_home": False, "effect": fx[a]}))
     return {team: results[-n:] for team, results in history.items()}
+
+
+def dot_html(result, m):
+    """One form dot. The match rides along as data attributes; the page script
+    turns them into the hover card. The label is the same match for screen
+    readers, which do not hover."""
+    label = (f'Spieltag {m["md"]}, {m["date"]}: {m["home"]} {m["hg"]}:{m["ag"]} {m["away"]}')
+    attrs = " ".join(f'data-{k}="{html.escape(str(v), quote=True)}"' for k, v in (
+        ("md", m["md"]), ("date", m["date"]), ("home", m["home"]), ("away", m["away"]),
+        ("hg", m["hg"]), ("ag", m["ag"]), ("at-home", int(m["at_home"])),
+        ("effect", f'{m["effect"]:.2f}')))
+    return (f'<i class="{result}" tabindex="0" role="img" '
+            f'aria-label="{html.escape(label, quote=True)}" {attrs}></i>')
 
 
 def official_positions(stats):
@@ -377,7 +444,7 @@ def remaining(scheduled, powers):
     return result
 
 
-def build_table(rows, scheduled=()):
+def build_table(rows, scheduled=(), effects=None):
     """Ranked by current form, with the season power score alongside it.
 
     Form leads because it is the one question the official table cannot answer -
@@ -391,7 +458,8 @@ def build_table(rows, scheduled=()):
     forms = form_series(rows, matchdays)
     stats = team_stats(rows)
     positions = official_positions(stats)
-    dots = last5_form(rows)
+    dots = last5_form(rows, effects=effects or match_effects(rows))
+    faced = opponents_faced(rows, matchdays, forms)
 
     # Prepare power scores for remaining calculation
     powers = {team: normalize_to_power_score(ratings[team], played[team])
@@ -415,6 +483,7 @@ def build_table(rows, scheduled=()):
             "position": positions[team],
             "series": values,
             "fseries": f,
+            "faced": faced.get(team),
         }
         if scheduled and team in remaining_data:
             row["remaining"] = remaining_data[team]
@@ -682,19 +751,89 @@ def season_switcher(current_season):
     return f'<nav class="seasons">{"".join(links)}</nav>'
 
 
-def rest_cell(remaining_data):
-    """HTML for the remaining schedule difficulty cell.
-
-    Shows mean opponent strength and home/away split.
-    Returns empty string if no remaining data or no fixtures left."""
+def rest_cell(remaining_data, level):
+    """HTML for the remaining schedule difficulty cell: the mean season strength
+    of the opponents still to come, coloured by `level` (easy, mid, hard)."""
     if not remaining_data or remaining_data.get("difficulty") is None:
         return '<td class="s-hide season">&ndash;</td>'
+    return (f'<td class="s-hide season"><span class="rest {level}">'
+            f'{num(remaining_data["difficulty"])}</span></td>')
 
-    difficulty = remaining_data["difficulty"]
-    n_h = remaining_data["n_home"]
-    n_a = remaining_data["n_away"]
-    return (f'<td class="s-hide season"><div class="pw"><b>{num(difficulty)}</b></div>'
-            f'<span class="rs">{n_h} H / {n_a} A</span></td>')
+
+def rest_levels(table):
+    """Easiest third of the league green, hardest third red, the rest orange."""
+    ranked = sorted((t for t in table if t.get("remaining") and t["remaining"]["difficulty"] is not None),
+                    key=lambda t: t["remaining"]["difficulty"])
+    third = len(ranked) // 3
+    return {t["team"]: "easy" if i < third else ("hard" if i >= len(ranked) - third else "mid")
+            for i, t in enumerate(ranked)}
+
+
+def faced_cell(forms):
+    """The mean form of the opponents met so far."""
+    if not forms:
+        return '<td class="s-hide season">&ndash;</td>'
+    return f'<td class="s-hide season"><div class="pw"><b>{num(sum(forms) / len(forms))}</b></div></td>'
+
+
+def opponent_profile(team, rows, table, matchdays):
+    """[(matchday, opponent, is_home, form, played)] for every fixture of the
+    team: played ones with the opponent's form before the match, open ones with
+    its form now. Matchday 1 has no earlier form and is left out."""
+    form_now = {t["team"]: t["form"] for t in table}
+    form_at = {t["team"]: dict(zip(matchdays, t["fseries"])) for t in table}
+    out = []
+    for r in sorted((r for r in rows if team in (r["home_team"], r["away_team"])),
+                    key=lambda r: (int(r["matchday"]), r["date"])):
+        opp = r["away_team"] if r["home_team"] == team else r["home_team"]
+        md = int(r["matchday"])
+        if md - 1 in form_at[opp]:
+            out.append((md, opp, r["home_team"] == team, form_at[opp][md - 1], True))
+    team_row = next(t for t in table if t["team"] == team)
+    for date_iso, md, opp, is_home in (team_row.get("remaining") or {}).get("fixtures", []):
+        out.append((md, opp, is_home, form_now[opp], False))
+    return out
+
+
+def profile_svg(fixtures):
+    """Mountains and valleys: the form of the opponents in match order. High is a
+    side in form, low one out of it; the dashed stretch is still to play, with
+    the opponents' form as it is now."""
+    if not fixtures:
+        return ""
+    w, h, left, right, top, bottom = 560, 150, 30, 10, 12, 24
+    half = max(max(abs(f[3] - 50) for f in fixtures), 10)
+    half = int(math.ceil(half / Y_GRID)) * Y_GRID
+
+    def x(i):
+        return left + (w - left - right) * (i / max(len(fixtures) - 1, 1))
+
+    def y(v):
+        return top + (h - top - bottom) * (1 - (v - (50 - half)) / (2 * half))
+
+    pts = [(x(i), y(f[3])) for i, f in enumerate(fixtures)]
+    played = [p for p, f in zip(pts, fixtures) if f[4]]
+    ahead = [p for p, f in zip(pts, fixtures) if not f[4]]
+    if played and ahead:
+        ahead = [played[-1]] + ahead
+
+    def path(ps):
+        return "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in ps) if len(ps) > 1 else ""
+
+    mid = y(50)
+    grid = (f'<line class="pbase" x1="{left}" x2="{w - right}" y1="{mid:.1f}" y2="{mid:.1f}"/>'
+            f'<text class="plab" x="{left - 6}" y="{mid + 4:.1f}" text-anchor="end">50</text>')
+    ticks = "".join(
+        f'<text class="plab" x="{pts[i][0]:.1f}" y="{h - 6}" text-anchor="middle">{f[0]}</text>'
+        for i, f in enumerate(fixtures) if i == 0 or f[0] % 5 == 0 or i == len(fixtures) - 1)
+    dots = "".join(
+        f'<circle class="pdot {"hi" if f[3] >= 50 else "lo"}{"" if f[4] else " open"}" '
+        f'cx="{pts[i][0]:.1f}" cy="{pts[i][1]:.1f}" r="4">'
+        f'<title>Spieltag {f[0]}, {html.escape(f[1])} ({"H" if f[2] else "A"}): Form {num(f[3])}</title></circle>'
+        for i, f in enumerate(fixtures))
+    return (f'<svg class="prof" viewBox="0 0 {w} {h}" role="img" aria-label="Form der Gegner im Saisonverlauf">'
+            f'{grid}<path class="pline" d="{path(played)}"/><path class="pline open" d="{path(ahead)}"/>'
+            f'{dots}{ticks}</svg>')
 
 
 def crest_img(logos, team):
@@ -1137,7 +1276,7 @@ def team_stats_by_venue(rows, team):
 
 
 def team_details_html(table, rows, logos, season, matchdays, match_probs, goals, bogey,
-                      shares, details):
+                      shares, details, effects):
     """One section with a team dropdown and one panel per team, all hidden except
     rank 0; the dropdown switches panels.
 
@@ -1145,10 +1284,20 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     season chart (highlighted), results list with goal strips and probabilities,
     remaining fixtures."""
 
-    options = "".join(
-        f'<option value="{rank}">{rank + 1}. {html.escape(t["team"])}</option>'
-        for rank, t in enumerate(table)
-    )
+    # One crest per team in form order, instead of a dropdown: the club is
+    # recognised by its badge before its name is read.
+    def pick(rank, t):
+        crest = logos.get(team_slug(t["team"]))
+        face = (f'<img src="{crest}" alt="">' if crest
+                else f'<span>{html.escape(t["team"][:3])}</span>')
+        name = html.escape(t["team"])
+        return (f'<button type="button" data-rank="{rank}" aria-pressed="{"true" if rank == 0 else "false"}" '
+                f'aria-label="{name}" title="{rank + 1}. {name}">{face}</button>')
+
+    picker = '<div class="tbar" role="group" aria-label="Team wählen">' + "".join(
+        pick(rank, t) for rank, t in enumerate(table)) + "</div>"
+    forecast_idx = {(wf_r["date"], wf_r["home_team"], wf_r["away_team"]): idx
+                    for idx, (wf_r, _) in enumerate(walk_forward_probs(rows) if match_probs else [])}
     sections = []
     for rank, team_row in enumerate(table):
         team = team_row["team"]
@@ -1209,16 +1358,12 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
                 # gave less than a one-in-four chance - the rule of the sheet.
                 prob_txt = "–"
                 bang = ""
-                for idx, (wf_r, _) in enumerate(walk_forward_probs(rows)):
-                    if (wf_r["date"] == r["date"] and
-                        wf_r["home_team"] == r["home_team"] and
-                        wf_r["away_team"] == r["away_team"]):
-                        if idx in match_probs:
-                            p = match_probs[idx]
-                            prob_txt = pct(p[2] if is_home else p[0])
-                            if hg != ag and p[outcome] < SURPRISE_MAX_P:
-                                bang = '<span class="bang">!</span>'
-                        break
+                idx = forecast_idx.get((r["date"], r["home_team"], r["away_team"]))
+                if idx in match_probs:
+                    p = match_probs[idx]
+                    prob_txt = pct(p[2] if is_home else p[0])
+                    if hg != ag and p[outcome] < SURPRISE_MAX_P:
+                        bang = '<span class="bang">!</span>'
                 # The strip seen from this team: its own goals above the line.
                 gs = goals.get(r["match_id"], [])
                 strip = timeline(gs, "home" if is_home else "away") if gs or hg + ag == 0 else ""
@@ -1235,6 +1380,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
                     f'<td class="dt">{short_date(r["date"])}</td>'
                     f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span></td>'
                     f'<td class="sc"><span class="res {res}">{res_letter}</span>{score}{bang}</td>'
+                    f'<td class="fxd">{effect_html(effects[r["match_id"]][team])}</td>'
                     f'<td class="vl">{strip}</td>'
                     f'<td class="pr">{prob_txt}</td></tr>'
                 )
@@ -1243,7 +1389,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     <div class="card">
       <table class="tres">
         <thead>
-          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Verlauf</th>
+          <tr><th>MD</th><th>Datum</th><th>Gegner</th><th>Ergebnis</th><th>Form</th><th>Verlauf</th>
           <th>Siegchance vorher</th></tr>
         </thead>
         <tbody>
@@ -1253,7 +1399,8 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     </div>
     <p class="hint"><span class="res w">S</span>Sieg, <span class="res d">U</span>Unentschieden,
     <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A: zu Hause oder
-    auswärts. <strong>Verlauf</strong>: ein Strich je Tor, oben die eigenen, unten die des
+    auswärts. <strong>Form</strong>: wie viele Formpunkte das Spiel gebracht oder gekostet hat.
+    <strong>Verlauf</strong>: ein Strich je Tor, oben die eigenen, unten die des
     Gegners, der Querstrich ist die Halbzeit. <strong>Siegchance vorher</strong> ist die
     Prognose vor dem Anpfiff; das <span class="bang inline">!</span> markiert einen Sieg mit
     weniger als einem Viertel.</p>
@@ -1293,6 +1440,13 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     </div>
 """
 
+        profile = profile_svg(opponent_profile(team, rows, table, matchdays))
+        profile_html = (f"""    <h3>Gegnerprofil{why("gegnerprofil")}</h3>
+    <div class="card chart">{profile}</div>
+    <p class="hint">Form des Gegners vor dem Spiel. Ein Berg ist ein Gegner in Form, ein Tal
+    einer außer Form; gestrichelt sind die offenen Spiele.</p>
+""" if profile else "")
+
         # Same two-column grid as the dashboard: facts and tables on the left,
         # the chart on the right and sticky, so the two views read as one sheet.
         section = f"""    <div class="tpanel dash" data-rank="{rank}" hidden>
@@ -1305,7 +1459,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
         <div class="card chart">{svg_chart(table, matchdays, "series", "season")}</div>
         <p class="hint">X-Achse: Spieltag, Y-Achse: Saisonwert über alle bisherigen Spiele.
         Die anderen Linien bleiben grau zum Vergleich.</p>
-{team_scorer_card(shares.get(team))}{team_surface_card(rows, details, team)}      </div>
+{profile_html}{team_scorer_card(shares.get(team))}{team_surface_card(rows, details, team)}      </div>
     </div>
 """
         sections.append(section)
@@ -1314,7 +1468,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     <h2>Team im Detail{why("team")}</h2>
     <p class="sub">Saisonverlauf, alle Ergebnisse, die verbleibenden Gegner, Torschützen und
     Belag eines Teams.</p>
-    <label class="tpick">Team <select id="tpick">{options}</select></label>
+    {picker}
 {"".join(sections)}  </section>
 """
 
@@ -1457,12 +1611,16 @@ def simulation_section(season, rows, logos, scheduled):
 """
 
 
-def method_section(has_future):
+REST_LAST_MATCHDAYS = 5
+
+
+def method_section(show_rest):
     """The long-form explanations behind every number on the page, on a tab of
     their own so the dashboard can keep its notes to a sentence or two. Static
     prose except for the few constants it quotes."""
-    rest = (" <strong>Rest</strong> ist die mittlere Saisonstärke der verbleibenden Gegner, "
-            "die Aufteilung dahinter, wie viele davon zu Hause sind." if has_future else "")
+    rest = (f" <strong>Rest</strong> erscheint in den letzten {REST_LAST_MATCHDAYS} Spieltagen: die mittlere "
+            "Saisonstärke der verbleibenden Gegner, grün das leichteste Drittel der Liga, "
+            "rot das schwerste." if show_rest else "")
     return f"""<section class="method" id="methodik">
     <h2>Erklärungen</h2>
     <p class="sub">Wie jede Zahl auf dieser Seite zustande kommt. Das
@@ -1485,10 +1643,14 @@ def method_section(has_future):
     Spieltag; die fünf Punkte unter dem Namen sind die letzten Spiele, grün Sieg, grau Remis,
     rot Niederlage. <strong>Tabelle</strong> ist der offizielle Platz, der Chip dahinter der
     Abstand zur Formtabelle: <span class="chip up">+2</span> heißt zwei Plätze besser als in
-    der Tabelle.{rest} Zwei Marker nach fester Regel: <strong>Mannschaft der Stunde</strong>
+    der Tabelle. <strong>Bisher</strong> ist die mittlere Form der bisherigen Gegner, jeweils so, wie sie vor dem Spiel war. Über den fünf Punkten unter dem Namen zeigt eine Karte das Spiel und seine Wirkung auf die Form: die Form des Fensters bis zu diesem Spiel, abzüglich der Form ohne dieses Spiel.{rest} Zwei Marker nach fester Regel: <strong>Mannschaft der Stunde</strong>
     beim größten Vorsprung auf den eigenen Tabellenplatz (mindestens zwei Plätze),
     <strong>Formsprung</strong> beim größten Zugewinn seit dem letzten Spieltag (mindestens
     1,5 Punkte, nie auf derselben Zeile).</p>
+    </div>
+    <div class="topic">
+    <h3 id="m-gegnerprofil">Gegnerprofil</h3>
+    <p>Die Form jedes Gegners in der Reihenfolge der Spiele, so wie sie vor dem Anpfiff war. Ein Berg ist ein Gegner in Form, ein Tal einer außer Form, die Linie bei 50 ist der Ligadurchschnitt. Gestrichelt sind die offenen Spiele, dort gilt die Form von heute.</p>
     </div>
     <div class="topic">
     <h3 id="m-tabelle">Tabelle</h3>
@@ -1594,6 +1756,9 @@ def render(season, rows, matchday_n=None):
         scheduled = load(season, "scheduled")
 
     has_future = bool(scheduled)
+    # The remaining schedule only says something near the end of the season.
+    total_matchdays = max((int(r["matchday"]) for r in list(played) + list(scheduled)), default=0)
+    show_rest = has_future and total_matchdays - matchday <= REST_LAST_MATCHDAYS
 
     # Calculate asset root path based on where this page will be written.
     # Current season (index.html or spieltag-NN/): depends on matchday_n
@@ -1608,7 +1773,8 @@ def render(season, rows, matchday_n=None):
         # Current page: docs/index.html
         root = ""
 
-    table, matchdays = build_table(played, scheduled)
+    effects = match_effects(played)
+    table, matchdays = build_table(played, scheduled, effects)
     if matchday_n is None:
         matchday = matchdays[-1] if matchdays else 0
     # else: use matchday from snapshot() - already set
@@ -1654,7 +1820,7 @@ def render(season, rows, matchday_n=None):
         # clone without data/details.csv rather than rendered empty.
         surface, marks, first, shares, bogey = page_data(played, season)
         team_panels_html = team_details_html(table, played, logos, season, matchdays,
-                                             match_probs, goals, bogey, shares, details)
+                                             match_probs, goals, bogey, shares, details, effects)
         stats_html = f"""  <section class="stats dash">
     <div class="col">
       <h2>Statistik</h2>
@@ -1686,7 +1852,7 @@ def render(season, rows, matchday_n=None):
         views.append(("prognose", "Prognose", outlook))
     if stats_html:
         views.append(("statistik", "Statistik", stats_html))
-    views.append(("methodik", "Erklärungen", method_section(has_future)))
+    views.append(("methodik", "Erklärungen", method_section(show_rest)))
     tabs_html = "  <div class=\"tabs\" role=\"tablist\">\n" + "".join(
         f'    <button role="tab" id="t-{vid}" aria-controls="v-{vid}" '
         f'aria-selected="{"true" if vid == "form" else "false"}" data-view="{vid}">{label}</button>\n'
@@ -1696,6 +1862,7 @@ def render(season, rows, matchday_n=None):
         f'  <div class="view" id="v-{vid}" role="tabpanel" aria-labelledby="t-{vid}" hidden>\n'
         f'{content}\n  </div>\n' for vid, _, content in views[1:])
 
+    levels = rest_levels(table)
     body_rows = []
     for rank, t in enumerate(table):
         w, d, l = t["record"]
@@ -1712,7 +1879,7 @@ def render(season, rows, matchday_n=None):
         else:
             cls = "up" if diff > 0 else "down"
             gap = f'<span class="chip {cls}">{"+" if diff > 0 else "−"}{abs(diff)}</span>'
-        segs = "".join(f'<i class="{r}"></i>' for r in t["dots"])
+        segs = "".join(dot_html(r, m) for r, m in t["dots"])
         zone = " top" if rank < 3 else (" bottom" if rank >= len(table) - 3 else "")
         tok = f'<span class="tok{zone}">{rank + 1}</span>'
         crest = logos.get(team_slug(t["team"]))
@@ -1731,13 +1898,14 @@ def render(season, rows, matchday_n=None):
         # Only the team of the hour gets the highlighter on top of its note; the
         # form jump is the smaller finding and stays a written remark, so the
         # two markers are told apart by how loudly they are marked.
-        rest_html = rest_cell(t.get("remaining")) if has_future else ""
+        faced_html = faced_cell(t.get("faced"))
+        rest_html = rest_cell(t.get("remaining"), levels.get(t["team"], "mid")) if show_rest else ""
         body_rows.append(
             f'<tr class="{"marked" if rank == hot_rank else ""}">'
             f'<td class="rank">{tok}</td>'
             f'<td class="team"><div class="tc">{crest}<div>'
             f'<span class="tn">{html.escape(t["team"])}</span>'
-            f'<span class="form"><span class="seg" aria-hidden="true">{segs}</span>'
+            f'<span class="form"><span class="seg">{segs}</span>'
             f'<span class="rt">{w}-{d}-{l}</span></span></div></div>{badge}</td>'
             f'<td class="power"><div class="pw"><b>{num(t["form"])}</b></div></td>'
             f"<td>{delta}</td>"
@@ -1745,6 +1913,7 @@ def render(season, rows, matchday_n=None):
             f"<td class=\"s-hide\">{t['matches']}</td>"
             f"<td class=\"s-hide\">{t['gf']}:{t['ga']}</td>"
             f"<td class=\"s-hide\">{signed(t['gf'] - t['ga'])}</td>"
+            f"{faced_html}"
             f"{rest_html}"
             f"<td class=\"tab\">{t['position']}{gap}</td>"
             f"</tr>"
@@ -1771,7 +1940,8 @@ def render(season, rows, matchday_n=None):
         farbig, die anderen grau.</p>"""
 
     # Only render Rest column header when there are scheduled fixtures
-    rest_header = '<th class="s-hide">Rest</th>' if has_future else ""
+    rest_header = '<th class="s-hide">Rest</th>' if show_rest else ""
+    faced_header = '<th class="s-hide">Bisher</th>'
 
     return f"""<!DOCTYPE html>
 <html lang="de">
@@ -1949,12 +2119,52 @@ def render(season, rows, matchday_n=None):
   .pw b {{ font:700 23px var(--display); }}
 
   .seg {{ display:flex; gap:4px; flex:0 0 auto; align-items:center; }}
-  .seg i {{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }}
+  .seg i {{ position:relative; width:7px; height:7px; border-radius:50%; flex:0 0 auto; }}
+  /* The dot is small; the hover area is not. */
+  .seg i::after {{ content:""; position:absolute; inset:-7px -3px; }}
+  .seg i:focus-visible {{ outline:2px solid var(--ink); outline-offset:3px; }}
   .seg i.w {{ background:var(--up); }}
   .seg i.d {{ background:var(--draw); }}
   .seg i.l {{ background:var(--down); }}
   .rt {{ color:var(--muted); font-size:13px; }}
+  /* The hover card over a form dot: a slip of the match report, set like the
+     sheet it belongs to - ink rule, paper, the figures in the narrow face. */
+  .dtip {{ position:absolute; z-index:60; width:236px; padding:10px 13px 9px;
+           background:var(--card); border:1px solid var(--ink); border-radius:3px;
+           box-shadow:3px 3px 0 rgba(35,32,27,.2); pointer-events:none;
+           transform:rotate(-.7deg); }}
+  .dtip[hidden] {{ display:none; }}
+  .dtip .dh {{ display:flex; justify-content:space-between; gap:10px; color:var(--muted);
+               font:600 12.5px var(--body); letter-spacing:.04em; text-transform:uppercase;
+               padding-bottom:6px; border-bottom:1px solid var(--line); }}
+  .dtip .dr {{ display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+               padding-top:5px; font:500 16px var(--body); color:var(--muted); }}
+  .dtip .dr b {{ font:700 24px/1 var(--display); font-variant-numeric:tabular-nums; }}
+  .dtip .dr.win {{ color:var(--ink); font-weight:700; }}
+  .dtip .df {{ display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:7px;
+               border-top:1px solid var(--line); color:var(--muted); font:14px var(--body); }}
+  .dtip .df .res {{ margin-right:0; }}
+  .dtip .df .fx {{ margin-left:auto; font:700 17px var(--display); }}
+  .dtip .df .fx small {{ margin-right:5px; color:var(--muted); font:14px var(--body); }}
   .rs {{ display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }}
+  /* Remaining schedule: easiest third green, hardest third red, the rest orange.
+     The orange is not the margin-note amber, which stays reserved for notes. */
+  .rest {{ display:inline-block; padding:2px 9px; border-radius:2px;
+           font:700 18px var(--display); font-variant-numeric:tabular-nums; }}
+  .rest.easy {{ background:#d6e8de; color:#0e5c3d; }}
+  .rest.mid {{ background:#f6e0c4; color:#9a4d0a; }}
+  .rest.hard {{ background:#f2dbe0; color:#7d1f34; }}
+  /* The opponent profile in a team panel. */
+  .prof {{ display:block; width:100%; height:auto; overflow:visible; }}
+  .pbase {{ stroke:var(--line); stroke-width:1.5; stroke-dasharray:3 4; }}
+  .plab {{ fill:var(--muted); font:12px var(--body); }}
+  .pline {{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; }}
+  .pline.open {{ stroke:var(--muted); stroke-dasharray:4 5; }}
+  .pdot.hi {{ fill:var(--up); }}
+  .pdot.lo {{ fill:var(--down); }}
+  .pdot.open {{ fill:var(--card); stroke-width:2; }}
+  .pdot.open.hi {{ stroke:var(--up); }}
+  .pdot.open.lo {{ stroke:var(--down); }}
 
   /* The row an editorial marker points at, gone over with a highlighter. Two
      strokes, neither of them the width of the row - a marker starts and stops
@@ -2253,18 +2463,18 @@ def render(season, rows, matchday_n=None):
   .tdet h3 {{ margin:22px 0 8px; font:600 17px/1.2 var(--display); }}
   .tdet .col > h3:first-child {{ margin-top:0; }}
   .tpanel[hidden] {{ display:none; }}
-  /* The picker is a line on the sheet, not a widget: the name sits in the
-     display face on an ink rule, with the browser's own arrow beside it. */
-  .tpick {{ display:inline-flex; align-items:baseline; gap:10px; margin:0 0 22px;
-            color:var(--muted); font-size:14.5px; }}
-  .tpick select {{ appearance:none; -webkit-appearance:none; cursor:pointer;
-                   font:700 20px/1.2 var(--display); color:var(--ink);
-                   background:transparent; border:0; border-bottom:2.5px solid var(--ink);
-                   border-radius:0; padding:2px 26px 3px 0; max-width:min(100%,24ch);
-                   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2323201b' stroke-width='2'/%3E%3C/svg%3E");
-                   background-repeat:no-repeat; background-position:right 4px center;
-                   background-size:12px 8px; }}
-  .tpick select:focus-visible {{ outline:2px solid var(--ink); outline-offset:4px; }}
+  /* The team bar: one crest per club in form order, the open one on an ink
+     rule, the rest quieter. */
+  .tbar {{ display:flex; flex-wrap:wrap; gap:4px 6px; margin:0 0 22px; }}
+  .tbar button {{ appearance:none; cursor:pointer; display:flex; align-items:center;
+                  justify-content:center; width:46px; height:46px; padding:0;
+                  background:transparent; border:0; border-bottom:3px solid transparent;
+                  opacity:.5; transition:opacity .12s; }}
+  .tbar button:hover {{ opacity:.85; }}
+  .tbar button[aria-pressed="true"] {{ opacity:1; border-bottom-color:var(--ink); }}
+  .tbar button:focus-visible {{ outline:2px solid var(--ink); outline-offset:2px; }}
+  .tbar img {{ width:34px; height:34px; object-fit:contain; }}
+  .tbar span {{ font:700 13px var(--display); color:var(--ink); }}
   .thead {{ display:flex; gap:24px; margin:0 0 20px; }}
   .tchest {{ display:flex; gap:14px; flex:0 0 auto; }}
   .tname {{ display:block; font:700 20px var(--display); color:var(--ink); margin-bottom:4px; }}
@@ -2284,6 +2494,7 @@ def render(season, rows, matchday_n=None):
   .tres .sc {{ width:80px; font-weight:600; white-space:nowrap; position:relative; }}
   .tres .sc .bang {{ left:auto; position:static; display:inline-block; font-size:22px;
                      vertical-align:-3px; margin-left:3px; }}
+  .tres .fxd {{ width:56px; font-weight:700; font-variant-numeric:tabular-nums; }}
   .tres .vl {{ width:150px; padding-top:4px; padding-bottom:4px; }}
   .tres .vl .tl {{ width:150px; height:34px; }}
   .tres .pr, .tres .pw {{ color:var(--muted); width:80px; }}
@@ -2432,7 +2643,7 @@ def render(season, rows, matchday_n=None):
                 <th>#</th><th class="l">Team</th><th class="l">Form</th>
                 <th>+/&minus;</th><th class="l season">Saison</th>
                 <th class="s-hide">Sp</th><th class="s-hide">Tore</th>
-                <th class="s-hide">Diff</th>{rest_header}<th>Tabelle</th>
+                <th class="s-hide">Diff</th>{faced_header}{rest_header}<th>Tabelle</th>
               </tr>
             </thead>
             <tbody>
@@ -2440,6 +2651,9 @@ def render(season, rows, matchday_n=None):
             </tbody>
           </table>
         </div>
+        <p class="hint"><strong>Mannschaft der Stunde</strong>: der größte Vorsprung der Form auf
+        den Tabellenplatz. <strong>Formsprung</strong>: der größte Zugewinn seit dem letzten
+        Spieltag.</p>
       </section>
     </div>
 
@@ -2463,7 +2677,7 @@ def render(season, rows, matchday_n=None):
 </main>
 <script>
   const panels = [...document.querySelectorAll('.tpanel')];
-  const picker = document.getElementById('tpick');
+  const picks = [...document.querySelectorAll('.tbar button')];
 
   // The detail section follows the dropdown.
   function showDetail(rank) {{
@@ -2478,9 +2692,12 @@ def render(season, rows, matchday_n=None):
       }}
     }});
   }}
-  if (picker) {{
-    picker.addEventListener('change', () => showDetail(picker.value));
-    showDetail(picker.value);
+  if (picks.length) {{
+    picks.forEach(b => b.addEventListener('click', () => {{
+      picks.forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+      showDetail(b.dataset.rank);
+    }}));
+    showDetail('0');
   }}
 
   // On a phone the pitch is wider than the screen and scrolls. Left-aligned it
@@ -2524,6 +2741,61 @@ def render(season, rows, matchday_n=None):
   }} else {{
     centrePitch();
   }}
+
+  // The hover card over a form dot. One card for the whole page, filled from the
+  // dot's data attributes; it opens above the dot, or below when the top is
+  // out of view, and stays inside the window.
+  const dtip = document.createElement('div');
+  dtip.className = 'dtip';
+  dtip.hidden = true;
+  document.body.appendChild(dtip);
+  const RESULT = {{ w: ['S', 'Sieg'], d: ['U', 'Unentschieden'], l: ['N', 'Niederlage'] }};
+  function el(tag, cls, text) {{
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }}
+  function showTip(dot) {{
+    const d = dot.dataset, hg = +d.hg, ag = +d.ag;
+    const res = dot.classList.contains('w') ? 'w' : dot.classList.contains('l') ? 'l' : 'd';
+    dtip.replaceChildren();
+    const head = el('div', 'dh');
+    head.append(el('span', '', 'Spieltag ' + d.md), el('span', '', d.date));
+    dtip.append(head);
+    [[d.home, hg, hg > ag], [d.away, ag, ag > hg]].forEach(([name, goals, win]) => {{
+      const row = el('div', 'dr' + (win ? ' win' : ''));
+      row.append(el('span', '', name), el('b', '', String(goals)));
+      dtip.append(row);
+    }});
+    const foot = el('div', 'df');
+    foot.append(el('span', 'res ' + res, RESULT[res][0]),
+                el('span', '', RESULT[res][1] + (d.atHome === '1' ? ', zu Hause' : ', auswärts')));
+    const v = +d.effect;
+    const fx = el('span', 'fx ' + (v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'));
+    fx.append(el('small', '', 'Form'),
+              (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(1).replace('.', ','));
+    foot.append(fx);
+    dtip.append(foot);
+    dtip.hidden = false;
+    const r = dot.getBoundingClientRect(), w = dtip.offsetWidth, h = dtip.offsetHeight;
+    let top = r.top - h - 12;
+    if (top < 8) top = r.bottom + 12;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+    dtip.style.top = top + window.scrollY + 'px';
+    dtip.style.left = left + window.scrollX + 'px';
+  }}
+  function hideTip() {{ dtip.hidden = true; }}
+  document.addEventListener('pointerover', e => {{
+    const dot = e.target.closest('.seg i');
+    if (dot) showTip(dot); else hideTip();
+  }});
+  document.addEventListener('focusin', e => {{
+    const dot = e.target.closest('.seg i');
+    if (dot) showTip(dot);
+  }});
+  document.addEventListener('focusout', hideTip);
+  window.addEventListener('scroll', hideTip, {{ passive: true }});
 </script>
 </body>
 </html>
