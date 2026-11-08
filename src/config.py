@@ -71,7 +71,11 @@ FORM_WINDOW = 5
 
 # Source spelling -> canonical name. fussball.de is consistent within a season,
 # so this only needs entries for spellings that differ between seasons.
-TEAM_ALIASES = {}
+TEAM_ALIASES = {
+    # Same ground (Gondershausen, Schulstr.), renamed between 2025/26 and 2026/27.
+    "SG Morshausen": "VfB Baybachhöhe",
+    "SG Hausbay Pfalzfeld": "SG Braunshorn",
+}
 
 # Validation set per season. A season that is not listed is only checked
 # structurally, since promotion and relegation change the roster every year.

@@ -8,6 +8,8 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
 - **Formtabelle** — die 14 Teams sortiert nach Form der letzten fünf Spieltage, gegner- und
   ergebnisgewichtet. Daneben: Veränderung zum Vorspieltag, Saisonwert (0–100), Bilanz,
   Tore und der offizielle Tabellenplatz mit dem Abstand zum Formrang.
+- **Tabelle** — der offizielle Stand nach Punkten, Tordifferenz und Toren, mit dem Abstand zum
+  Formrang.
 - **Aufstellung** — die Liga als Spielfeld, nach Form angeordnet.
 - **Spieltag** — jedes Spiel mit seinen Torminuten, Anstoß, Platz, Zuschauern und der Prognose
   davor.
@@ -16,7 +18,8 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
 - **Team im Detail** — Ergebnisse, Restprogramm, Saisonverlauf, Torschützen, Belag und
   Angstgegner je Team.
 - **Prognose** — Heim/Remis/Auswärts-Wahrscheinlichkeiten und erwartete Tore für den nächsten
-  Spieltag, samt Bilanz gegen die Liga-Quote.
+  Spieltag, samt Bilanz gegen die Liga-Quote. Jüngere Spiele zählen mehr (Halbwertszeit sechs
+  Spieltage), die Umrechnung wird vor jedem Spieltag neu geeicht.
 - **Statistik** — Torschützen, Belag und Heimbonus, Rückstand und Führung.
 - **Erklärungen** — ein eigener Tab, der jede Spalte und jeden Marker erklärt.
 

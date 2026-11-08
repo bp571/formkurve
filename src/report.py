@@ -26,10 +26,10 @@ from config import (
 )
 from analysis import MIN_BOGEY_MEETINGS, page_data
 from details import DETAILS_CSV, EVENTS_CSV, load_csv
-from backtest import outcome_of, probabilities
+from backtest import outcome_of
 from predict import (
-    MIN_MATCHES, SIM_RUNS, calibration, forecast, load, next_matchday, simulate_season,
-    track_record, walk_forward,
+    HALF_LIFE, MIN_MATCHES, SIM_RUNS, forecast, load, next_matchday, simulate_season,
+    track_record, walk_forward_probs,
 )
 from rating import EloRating
 from score import clamp, normalize_to_power_score
@@ -709,11 +709,7 @@ def match_probabilities(rows, season):
     if season != SEASON_CURRENT or len(rows) < MIN_MATCHES:
         return {}
 
-    params = calibration()
-    result = {}
-    for match_idx, (r, diff) in enumerate(walk_forward(rows)):
-        result[match_idx] = probabilities(diff, params)
-    return result
+    return dict(enumerate(p for _, p in walk_forward_probs(rows)))
 
 
 # A win the forecast gave less than one in four. The same floor marks the
@@ -818,9 +814,9 @@ def matchday_sheet(rows, matchday, logos, details, goals):
     if not latest:
         return '<div class="card sheet"><p class="none">Noch kein Spiel.</p></div>'
     probs = {}
-    for r, diff in walk_forward(rows):
+    for r, p in walk_forward_probs(rows):
         if int(r["matchday"]) == matchday:
-            probs[r["match_id"]] = probabilities(diff, calibration())
+            probs[r["match_id"]] = p
 
     items = []
     for r in latest:
@@ -912,6 +908,42 @@ def surface_section(surface):
         <p class="hint"><strong>Heimbonus</strong>: um wie viele Prozentpunkte der Gastgeber besser
         abschneidet, als die Stärke beider Teams erwarten lässt. +{grass} auf Rasen heißt
         {grass} Siege mehr aus hundert Heimspielen.</p>"""
+
+
+def official_table_section(table, logos):
+    """The official table as fussball.de ranks it, next to the form ranking.
+    The chip is the team's form rank against its table place, as in the form
+    table: positive means it plays better than it stands."""
+    rows = []
+    for t in sorted(table, key=lambda t: t["position"]):
+        w, d, l = t["record"]
+        diff = t["gf"] - t["ga"]
+        form_rank = table.index(t) + 1
+        gap = t["position"] - form_rank
+        cls, sign = ("up", "+") if gap > 0 else (("down", "−") if gap < 0 else ("flat", "±"))
+        crest = logos.get(team_slug(t["team"]))
+        crest = f'<img class="lg" src="{crest}" alt="">' if crest else ""
+        rows.append(
+            f'<tr><td>{t["position"]}</td>'
+            f'<td class="l"><span class="tc">{crest}{html.escape(t["team"])}</span></td>'
+            f'<td>{t["matches"]}</td><td>{w}-{d}-{l}</td>'
+            f'<td>{t["gf"]}:{t["ga"]}</td><td>{"+" if diff > 0 else ("−" if diff < 0 else "")}{abs(diff)}</td>'
+            f'<td><b>{3 * w + d}</b></td>'
+            f'<td><span class="chip {cls}">{sign}{abs(gap) if gap else "0"}</span></td></tr>'
+        )
+    return f"""<section class="stats dash">
+    <div class="col">
+      <h2>Tabelle{why("tabelle")}</h2>
+      <p class="sub">Der offizielle Stand nach Punkten, Tordifferenz und erzielten Toren.</p>
+      <div class="card">
+        <table class="sfacts">
+          <thead><tr><th>Pl</th><th class="l">Team</th><th>Sp</th><th>S-U-N</th><th>Tore</th><th>Diff</th><th>Pkt</th><th>Form</th></tr></thead>
+          <tbody>{"".join(rows)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+"""
 
 
 def comeback_section(marks, first, logos):
@@ -1177,7 +1209,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
                 # gave less than a one-in-four chance - the rule of the sheet.
                 prob_txt = "–"
                 bang = ""
-                for idx, (wf_r, _) in enumerate(walk_forward(rows)):
+                for idx, (wf_r, _) in enumerate(walk_forward_probs(rows)):
                     if (wf_r["date"] == r["date"] and
                         wf_r["home_team"] == r["home_team"] and
                         wf_r["away_team"] == r["away_team"]):
@@ -1459,6 +1491,12 @@ def method_section(has_future):
     1,5 Punkte, nie auf derselben Zeile).</p>
     </div>
     <div class="topic">
+    <h3 id="m-tabelle">Tabelle</h3>
+    <p>Der offizielle Stand: drei Punkte für einen Sieg, einer für ein Remis, bei Gleichstand
+    zählen Tordifferenz und erzielte Tore. <strong>Form</strong> ist der Abstand zum Platz in
+    der Formtabelle: <span class="chip up">+2</span> heißt zwei Plätze besser in der Form.</p>
+    </div>
+    <div class="topic">
     <h3 id="m-spieltag">Spieltag</h3>
     <p>Jedes Spiel als eine Zeile: die Torminuten als Striche von Anpfiff bis Abpfiff, oben
     der Gastgeber, unten der Gast, der Querstrich ist die Halbzeit; darunter Anstoß, Platz,
@@ -1482,10 +1520,12 @@ def method_section(has_future):
     </div>
     <div class="topic">
     <h3 id="m-prognose">Prognose</h3>
-    <p>Jedes Team bekommt aus allen bisherigen Ergebnissen eine Angriffs- und eine
-    Abwehrstärke; daraus folgen die erwarteten Tore beider Seiten (Heimvorteil eingerechnet)
-    und aus deren Abstand die drei Prozentwerte, geeicht an der kompletten Saison
-    {SEASON_PREVIOUS}. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
+    <p>Jedes Team bekommt aus den bisherigen Ergebnissen eine Angriffs- und eine
+    Abwehrstärke, wobei ein Spiel alle {HALF_LIFE:.0f} Spieltage nur noch halb zählt: die
+    letzten fünf bis acht Spiele wiegen am meisten. Daraus folgen die erwarteten Tore beider
+    Seiten (Heimvorteil eingerechnet) und aus deren Abstand die drei Prozentwerte. Die
+    Umrechnung wird vor jedem Spieltag neu geeicht, an {SEASON_PREVIOUS} und den bisherigen
+    Spielen dieser Saison, auch der Heimvorteil. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
     Spiel oder Abtasten. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
     Form.</p>
     <p>Ein <strong>Remis ist nie am wahrscheinlichsten</strong>, weil beide Seiten dieselbe
@@ -1638,7 +1678,8 @@ def render(season, rows, matchday_n=None):
 
     # One tab per question, and the explanations last. An archive page has no
     # team panels and nothing to forecast, so it has no forecast tab.
-    views = [("form", "Form", None)]
+    views = [("form", "Form", None),
+             ("tabelle", "Tabelle", official_table_section(table, logos))]
     if team_panels_html:
         views.append(("team", "Team im Detail", team_panels_html))
     if fcast:

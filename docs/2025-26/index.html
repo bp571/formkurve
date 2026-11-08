@@ -630,6 +630,7 @@
 <main class="wrap">
   <div class="tabs" role="tablist">
     <button role="tab" id="t-form" aria-controls="v-form" aria-selected="true" data-view="form">Form</button>
+    <button role="tab" id="t-tabelle" aria-controls="v-tabelle" aria-selected="false" data-view="tabelle">Tabelle</button>
     <button role="tab" id="t-methodik" aria-controls="v-methodik" aria-selected="false" data-view="methodik">Erklärungen</button>
   </div>
   <div class="view" id="v-form" role="tabpanel" aria-labelledby="t-form">
@@ -764,6 +765,21 @@
     </div>
   </div>
   </div>
+  <div class="view" id="v-tabelle" role="tabpanel" aria-labelledby="t-tabelle" hidden>
+<section class="stats dash">
+    <div class="col">
+      <h2>Tabelle<a class="why" href="#m-tabelle" aria-label="Erklärung">?</a></h2>
+      <p class="sub">Der offizielle Stand nach Punkten, Tordifferenz und erzielten Toren.</p>
+      <div class="card">
+        <table class="sfacts">
+          <thead><tr><th>Pl</th><th class="l">Team</th><th>Sp</th><th>S-U-N</th><th>Tore</th><th>Diff</th><th>Pkt</th><th>Form</th></tr></thead>
+          <tbody><tr><td>1</td><td class="l"><span class="tc">SV Blau-Weiß Binningen</span></td><td>26</td><td>18-2-6</td><td>63:31</td><td>+32</td><td><b>56</b></td><td><span class="chip flat">±0</span></td></tr><tr><td>2</td><td class="l"><span class="tc">SG Morshausen</span></td><td>26</td><td>16-5-5</td><td>50:34</td><td>+16</td><td><b>53</b></td><td><span class="chip down">−2</span></td></tr><tr><td>3</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/sv-blankenrath.png" alt="">SV Blankenrath</span></td><td>26</td><td>14-5-7</td><td>67:35</td><td>+32</td><td><b>47</b></td><td><span class="chip up">+1</span></td></tr><tr><td>4</td><td class="l"><span class="tc">SG Mosel Löf</span></td><td>26</td><td>12-3-11</td><td>55:49</td><td>+6</td><td><b>39</b></td><td><span class="chip down">−5</span></td></tr><tr><td>5</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/tus-kirchberg-ii.png" alt="">TuS Kirchberg II</span></td><td>26</td><td>11-5-10</td><td>53:37</td><td>+16</td><td><b>38</b></td><td><span class="chip flat">±0</span></td></tr><tr><td>6</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/tus-rheinboellen.png" alt="">TuS Rheinböllen</span></td><td>26</td><td>8-12-6</td><td>63:43</td><td>+20</td><td><b>36</b></td><td><span class="chip down">−6</span></td></tr><tr><td>7</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/ssv-boppard.png" alt="">SSV Boppard</span></td><td>26</td><td>11-2-13</td><td>54:73</td><td>−19</td><td><b>35</b></td><td><span class="chip down">−4</span></td></tr><tr><td>8</td><td class="l"><span class="tc">SG Hausbay Pfalzfeld</span></td><td>26</td><td>9-5-12</td><td>45:53</td><td>−8</td><td><b>32</b></td><td><span class="chip up">+2</span></td></tr><tr><td>9</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/sg-dickenschied.png" alt="">SG Dickenschied</span></td><td>26</td><td>10-2-14</td><td>51:63</td><td>−12</td><td><b>32</b></td><td><span class="chip down">−5</span></td></tr><tr><td>10</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/sc-weiler.png" alt="">SC Weiler</span></td><td>26</td><td>10-1-15</td><td>52:63</td><td>−11</td><td><b>31</b></td><td><span class="chip up">+7</span></td></tr><tr><td>11</td><td class="l"><span class="tc"><img class="lg" src="../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt="">SG Vorderhunsrück Sabershausen</span></td><td>26</td><td>9-4-13</td><td>36:58</td><td>−22</td><td><b>31</b></td><td><span class="chip down">−2</span></td></tr><tr><td>12</td><td class="l"><span class="tc">SSV Ellenz-Poltersdorf</span></td><td>26</td><td>9-3-14</td><td>45:69</td><td>−24</td><td><b>30</b></td><td><span class="chip up">+5</span></td></tr><tr><td>13</td><td class="l"><span class="tc">SpvGG Cochem</span></td><td>26</td><td>8-5-13</td><td>36:47</td><td>−11</td><td><b>29</b></td><td><span class="chip up">+5</span></td></tr><tr><td>14</td><td class="l"><span class="tc">SG Ober Kostenz</span></td><td>26</td><td>8-4-14</td><td>27:42</td><td>−15</td><td><b>28</b></td><td><span class="chip up">+4</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  </div>
   <div class="view" id="v-methodik" role="tabpanel" aria-labelledby="t-methodik" hidden>
 <section class="method" id="methodik">
     <h2>Erklärungen</h2>
@@ -791,6 +807,12 @@
     beim größten Vorsprung auf den eigenen Tabellenplatz (mindestens zwei Plätze),
     <strong>Formsprung</strong> beim größten Zugewinn seit dem letzten Spieltag (mindestens
     1,5 Punkte, nie auf derselben Zeile).</p>
+    </div>
+    <div class="topic">
+    <h3 id="m-tabelle">Tabelle</h3>
+    <p>Der offizielle Stand: drei Punkte für einen Sieg, einer für ein Remis, bei Gleichstand
+    zählen Tordifferenz und erzielte Tore. <strong>Form</strong> ist der Abstand zum Platz in
+    der Formtabelle: <span class="chip up">+2</span> heißt zwei Plätze besser in der Form.</p>
     </div>
     <div class="topic">
     <h3 id="m-spieltag">Spieltag</h3>
@@ -874,7 +896,7 @@
   <footer>
     <p>Datenquelle: <a href="https://www.fussball.de">fussball.de</a> (DFB), dort stehen die offizielle
     Tabelle und alle Ergebnisse. Diese Seite zeigt nur daraus berechnete Werte.
-    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 01.11.2026</p>
+    Privates, nicht-kommerzielles Projekt. Stand der Berechnung: 08.11.2026</p>
   </footer>
 </main>
 <script>

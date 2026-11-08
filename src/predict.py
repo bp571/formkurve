@@ -7,11 +7,19 @@ probabilities. Percentages and expected goals therefore always agree - an
 Elo-based percentage next to a Poisson scoreline contradicted itself in 31% of
 2025/26 matches, which on a page reads as a bug rather than as two lenses.
 
-The calibration is fitted on the *previous* season, so it never sees a match it
-scores. Measured walk-forward on 2025/26 the expected-goal difference is the
-best of the candidates in src/explore_predictors.py - and still not
-distinguishable from simply quoting the league's own home/draw/away rates. The
-page says that outright; the forecast is a lens, not an edge.
+Two things are re-weighed every matchday. The Poisson fit counts a match
+HALF_LIFE matchdays old half as much as one from the last matchday, so the last
+five to eight games carry the most. And the calibration - how an expected-goal
+difference becomes home/draw/away, home advantage included - is refitted on the
+previous season plus every match of this one played *before* the matchday it
+scores, so it never sees a match it scores and follows the league as it goes.
+
+Measured walk-forward over both seasons (n=133) every variant - whole season,
+half-lives 4 to 12, hard windows - lands within 0.001 RPS of the others, far
+inside the standard error of 0.004, and all of them within noise of simply
+quoting the league's home/draw/away rates. The decay is here because it is the
+idea behind the page, not because it won. The page says that outright; the
+forecast is a lens, not an edge.
 
 Expected goals are a mean, not a tip: the most likely exact score is right in
 4% of matches, and 2:1 alone would be the "prediction" in a third of them. The
@@ -32,6 +40,10 @@ from config import MATCHES_CSV, SEASON_PREVIOUS
 # it a side that won 6:0 once in September gets an absurd attack rate.
 POISSON_SHRINK = 4.0
 
+# A match this many matchdays older than the one being forecast counts half as
+# much. Six puts most of the weight on the last five to eight games.
+HALF_LIFE = 6.0
+
 # A forecast needs something to stand on: below this many played matches the fit
 # is the league average for everyone, which is not worth printing.
 MIN_MATCHES = 14
@@ -47,36 +59,45 @@ def goals(row):
     return int(row["home_goals"]), int(row["away_goals"])
 
 
-def poisson_model(rows, shrink=POISSON_SHRINK):
+def poisson_model(rows, shrink=POISSON_SHRINK, half_life=HALF_LIFE, asof=None):
     """Attack and defence rates per team, plus the league's home factor.
 
     Iterative scaling: each team's rate is the goals it actually got divided by
     the goals the current fit expects it to have got, with `shrink` pseudo-
     matches of league average mixed in so early-season rates stay sane.
-    `mu` is goals per team per match, `home_factor` what playing at home
-    multiplies that by.
+    Every match is weighted by its age in matchdays before `asof` (default: the
+    matchday after the latest one in `rows`), halving every `half_life`; a
+    postponed match counts by its own matchday. `mu` is goals per team per
+    match, `home_factor` what playing at home multiplies that by.
     """
     teams = sorted({r[s] for r in rows for s in ("home_team", "away_team")})
     scored = [goals(r) for r in rows]
-    mu = sum(h + a for h, a in scored) / (2 * len(rows))
-    home_factor = (sum(h for h, _ in scored) / len(rows)) / mu
+    if asof is None:
+        asof = max(int(r["matchday"]) for r in rows) + 1
+    w = [0.5 ** (max(asof - 1 - int(r["matchday"]), 0) / half_life) for r in rows]
+    total = sum(w)
+    mu = sum(wi * (h + a) for wi, (h, a) in zip(w, scored)) / (2 * total)
+    home_factor = (sum(wi * h for wi, (h, _) in zip(w, scored)) / total) / mu
+    # The pseudo-matches are scaled to the average weight, so decaying the data
+    # does not quietly make the shrinkage weaker.
+    pseudo = shrink * mu * total / len(rows)
 
     atk = dict.fromkeys(teams, 1.0)
     dfn = dict.fromkeys(teams, 1.0)
     for _ in range(30):
         gf, ga = defaultdict(float), defaultdict(float)
         e_atk, e_dfn = defaultdict(float), defaultdict(float)
-        for r, (hg, ag) in zip(rows, scored):
+        for r, (hg, ag), wi in zip(rows, scored, w):
             h, a = r["home_team"], r["away_team"]
-            gf[h] += hg; ga[h] += ag
-            gf[a] += ag; ga[a] += hg
-            e_atk[h] += mu * home_factor * dfn[a]
-            e_atk[a] += mu * dfn[h]
-            e_dfn[a] += mu * home_factor * atk[h]
-            e_dfn[h] += mu * atk[a]
+            gf[h] += wi * hg; ga[h] += wi * ag
+            gf[a] += wi * ag; ga[a] += wi * hg
+            e_atk[h] += wi * mu * home_factor * dfn[a]
+            e_atk[a] += wi * mu * dfn[h]
+            e_dfn[a] += wi * mu * home_factor * atk[h]
+            e_dfn[h] += wi * mu * atk[a]
         for t in teams:
-            atk[t] = (gf[t] + shrink * mu) / (e_atk[t] + shrink * mu)
-            dfn[t] = (ga[t] + shrink * mu) / (e_dfn[t] + shrink * mu)
+            atk[t] = (gf[t] + pseudo) / (e_atk[t] + pseudo)
+            dfn[t] = (ga[t] + pseudo) / (e_dfn[t] + pseudo)
     return mu, home_factor, atk, dfn
 
 
@@ -98,7 +119,7 @@ def walk_forward(rows):
         earlier = [r for r in rows if int(r["matchday"]) < matchday]
         if len(earlier) < MIN_MATCHES:
             continue
-        model = poisson_model(earlier)
+        model = poisson_model(earlier, asof=matchday)
         for r in rows:
             if int(r["matchday"]) == matchday:
                 home_xg, away_xg = expected_goals(model, r["home_team"], r["away_team"])
@@ -107,15 +128,41 @@ def walk_forward(rows):
 
 
 @lru_cache(maxsize=None)
-def calibration(season=SEASON_PREVIOUS):
-    """Expected-goal difference -> H/D/A, fitted once on a completed season."""
-    samples = [(diff, outcome_of(*goals(r))) for r, diff in walk_forward(load(season))]
+def _previous_samples():
+    return tuple((diff, outcome_of(*goals(r)))
+                 for r, diff in walk_forward(load(SEASON_PREVIOUS)))
+
+
+@lru_cache(maxsize=None)
+def _fit(samples):
     if not samples:
         # Without them the fit returns its starting values and every match
         # reads 31/38/31 - a stale season id or a missing matches.csv must
         # fail here, not on the page.
-        raise ValueError(f"no played matches for {season} in {MATCHES_CSV}")
-    return fit_ordered_logistic(samples)
+        raise ValueError(f"no played matches for {SEASON_PREVIOUS} in {MATCHES_CSV}")
+    return fit_ordered_logistic(list(samples))
+
+
+def _calibrations(rows):
+    """[(row, diff, params)] for `rows` (the current season), the params fitted
+    on the previous season and the matchdays of this one before the row's own."""
+    scored = [(int(r["matchday"]), r, diff, outcome_of(*goals(r)))
+              for r, diff in walk_forward(rows)]
+    base = _previous_samples()
+    return [(r, diff, _fit(base + tuple((d, o) for m2, _, d, o in scored if m2 < md)))
+            for md, r, diff, _ in scored]
+
+
+def _current_calibration(played):
+    """The calibration for the matchday after the latest one in `played`."""
+    return _fit(_previous_samples() + tuple(
+        (diff, outcome_of(*goals(r))) for r, diff in walk_forward(played)))
+
+
+def walk_forward_probs(rows):
+    """(row, (p_away, p_draw, p_home)) as the page would have shown it before
+    each match: the fit and the calibration both from the matchdays before it."""
+    return [(r, probabilities(diff, params)) for r, diff, params in _calibrations(rows)]
 
 
 def next_matchday(scheduled):
@@ -133,7 +180,7 @@ def forecast(played, fixtures):
     """Probabilities and expected goals per fixture, in kick-off order."""
     if len(played) < MIN_MATCHES or not fixtures:
         return []
-    params = calibration()
+    params = _current_calibration(played)
     model = poisson_model(played)
 
     out = []
@@ -154,15 +201,13 @@ def track_record(rows):
     the page showed at the time. The yardstick is the constant league base rate
     - what anyone can predict without a model at all.
     """
-    params = calibration()
-    base = probabilities(0.0, params)
-
     # Both tip the most likely outcome, whatever its size - for the base rate
     # that is the home win every time.
     hits, base_hits, model_rps, base_rps = 0, 0, [], []
-    for r, diff in walk_forward(rows):
+    for r, diff, params in _calibrations(rows):
         outcome = outcome_of(*goals(r))
         p = probabilities(diff, params)
+        base = probabilities(0.0, params)
         hits += max(range(3), key=p.__getitem__) == outcome
         base_hits += max(range(3), key=base.__getitem__) == outcome
         model_rps.append(rps(p, outcome))

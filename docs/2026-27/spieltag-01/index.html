@@ -633,6 +633,7 @@
 <main class="wrap">
   <div class="tabs" role="tablist">
     <button role="tab" id="t-form" aria-controls="v-form" aria-selected="true" data-view="form">Form</button>
+    <button role="tab" id="t-tabelle" aria-controls="v-tabelle" aria-selected="false" data-view="tabelle">Tabelle</button>
     <button role="tab" id="t-team" aria-controls="v-team" aria-selected="false" data-view="team">Team im Detail</button>
     <button role="tab" id="t-statistik" aria-controls="v-statistik" aria-selected="false" data-view="statistik">Statistik</button>
     <button role="tab" id="t-methodik" aria-controls="v-methodik" aria-selected="false" data-view="methodik">Erklärungen</button>
@@ -728,6 +729,21 @@
       </section>
     </div>
   </div>
+  </div>
+  <div class="view" id="v-tabelle" role="tabpanel" aria-labelledby="t-tabelle" hidden>
+<section class="stats dash">
+    <div class="col">
+      <h2>Tabelle<a class="why" href="#m-tabelle" aria-label="Erklärung">?</a></h2>
+      <p class="sub">Der offizielle Stand nach Punkten, Tordifferenz und erzielten Toren.</p>
+      <div class="card">
+        <table class="sfacts">
+          <thead><tr><th>Pl</th><th class="l">Team</th><th>Sp</th><th>S-U-N</th><th>Tore</th><th>Diff</th><th>Pkt</th><th>Form</th></tr></thead>
+          <tbody><tr><td>1</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/tus-kirchberg-ii.png" alt="">TuS Kirchberg II</span></td><td>1</td><td>1-0-0</td><td>5:0</td><td>+5</td><td><b>3</b></td><td><span class="chip flat">±0</span></td></tr><tr><td>2</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sv-blankenrath.png" alt="">SV Blankenrath</span></td><td>1</td><td>1-0-0</td><td>4:1</td><td>+3</td><td><b>3</b></td><td><span class="chip down">−1</span></td></tr><tr><td>3</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/tus-rheinboellen.png" alt="">TuS Rheinböllen</span></td><td>1</td><td>1-0-0</td><td>3:0</td><td>+3</td><td><b>3</b></td><td><span class="chip down">−1</span></td></tr><tr><td>4</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/vfb-baybachhoehe.png" alt="">VfB Baybachhöhe</span></td><td>1</td><td>1-0-0</td><td>2:0</td><td>+2</td><td><b>3</b></td><td><span class="chip up">+2</span></td></tr><tr><td>5</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-rheinblick-oberwesel.png" alt="">SG Rheinblick Oberwesel</span></td><td>1</td><td>1-0-0</td><td>4:3</td><td>+1</td><td><b>3</b></td><td><span class="chip down">−1</span></td></tr><tr><td>6</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-braunshorn.png" alt="">SG Braunshorn</span></td><td>1</td><td>1-0-0</td><td>1:0</td><td>+1</td><td><b>3</b></td><td><span class="chip up">+1</span></td></tr><tr><td>7</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-bremm.png" alt="">SG Bremm</span></td><td>1</td><td>0-1-0</td><td>0:0</td><td>0</td><td><b>1</b></td><td><span class="chip down">−1</span></td></tr><tr><td>8</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sv-strimmig.png" alt="">SV Strimmig</span></td><td>1</td><td>0-1-0</td><td>0:0</td><td>0</td><td><b>1</b></td><td><span class="chip up">+1</span></td></tr><tr><td>9</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sc-weiler.png" alt="">SC Weiler</span></td><td>1</td><td>0-0-1</td><td>3:4</td><td>−1</td><td><b>0</b></td><td><span class="chip flat">±0</span></td></tr><tr><td>10</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-dickenschied.png" alt="">SG Dickenschied</span></td><td>1</td><td>0-0-1</td><td>0:1</td><td>−1</td><td><b>0</b></td><td><span class="chip flat">±0</span></td></tr><tr><td>11</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/ssv-boppard.png" alt="">SSV Boppard</span></td><td>1</td><td>0-0-1</td><td>0:2</td><td>−2</td><td><b>0</b></td><td><span class="chip down">−2</span></td></tr><tr><td>12</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt="">SG Vorderhunsrück Sabershausen</span></td><td>1</td><td>0-0-1</td><td>1:4</td><td>−3</td><td><b>0</b></td><td><span class="chip up">+1</span></td></tr><tr><td>13</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-zell.png" alt="">SG Zell</span></td><td>1</td><td>0-0-1</td><td>0:3</td><td>−3</td><td><b>0</b></td><td><span class="chip up">+1</span></td></tr><tr><td>14</td><td class="l"><span class="tc"><img class="lg" src="../../assets/logos/sg-werlau.png" alt="">SG Werlau</span></td><td>1</td><td>0-0-1</td><td>0:5</td><td>−5</td><td><b>0</b></td><td><span class="chip flat">±0</span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   </div>
   <div class="view" id="v-team" role="tabpanel" aria-labelledby="t-team" hidden>
   <section class="tdet">
@@ -1765,6 +1781,12 @@
     1,5 Punkte, nie auf derselben Zeile).</p>
     </div>
     <div class="topic">
+    <h3 id="m-tabelle">Tabelle</h3>
+    <p>Der offizielle Stand: drei Punkte für einen Sieg, einer für ein Remis, bei Gleichstand
+    zählen Tordifferenz und erzielte Tore. <strong>Form</strong> ist der Abstand zum Platz in
+    der Formtabelle: <span class="chip up">+2</span> heißt zwei Plätze besser in der Form.</p>
+    </div>
+    <div class="topic">
     <h3 id="m-spieltag">Spieltag</h3>
     <p>Jedes Spiel als eine Zeile: die Torminuten als Striche von Anpfiff bis Abpfiff, oben
     der Gastgeber, unten der Gast, der Querstrich ist die Halbzeit; darunter Anstoß, Platz,
@@ -1788,10 +1810,12 @@
     </div>
     <div class="topic">
     <h3 id="m-prognose">Prognose</h3>
-    <p>Jedes Team bekommt aus allen bisherigen Ergebnissen eine Angriffs- und eine
-    Abwehrstärke; daraus folgen die erwarteten Tore beider Seiten (Heimvorteil eingerechnet)
-    und aus deren Abstand die drei Prozentwerte, geeicht an der kompletten Saison
-    2025/26. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
+    <p>Jedes Team bekommt aus den bisherigen Ergebnissen eine Angriffs- und eine
+    Abwehrstärke, wobei ein Spiel alle 6 Spieltage nur noch halb zählt: die
+    letzten fünf bis acht Spiele wiegen am meisten. Daraus folgen die erwarteten Tore beider
+    Seiten (Heimvorteil eingerechnet) und aus deren Abstand die drei Prozentwerte. Die
+    Umrechnung wird vor jedem Spieltag neu geeicht, an 2025/26 und den bisherigen
+    Spielen dieser Saison, auch der Heimvorteil. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
     Spiel oder Abtasten. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
     Form.</p>
     <p>Ein <strong>Remis ist nie am wahrscheinlichsten</strong>, weil beide Seiten dieselbe
