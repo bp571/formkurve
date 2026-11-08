@@ -196,11 +196,14 @@ def collect(season, use_cache=False):
         mid = r["match_id"]
         try:
             detail_html, course_html = fetch(mid, use_cache)
+            # Parsing downloads the obfuscation font, so it can be refused too.
+            detail = parse_detail(detail_html)
+            course = parse_course(course_html, mid)
         except Exception as e:  # one refused page must not lose the run
             logger.warning(f"{mid} ({r['home_team']} - {r['away_team']}): {e}")
             continue
-        details[mid] = {"match_id": mid, **parse_detail(detail_html)}
-        events = [e for e in events if e["match_id"] != mid] + parse_course(course_html, mid)
+        details[mid] = {"match_id": mid, **detail}
+        events = [e for e in events if e["match_id"] != mid] + course
         logger.info(f"[{i}/{len(todo)}] md{r['matchday']} {r['home_team']} - {r['away_team']}: "
                     f"{details[mid]['surface'] or '?'}, {details[mid]['kickoff'] or '?'}, "
                     f"{sum(1 for e in events if e['match_id'] == mid)} events")
