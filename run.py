@@ -83,7 +83,9 @@ def find_scrape_bound(season: str, existing):
     bound = min(max(played) + 1, total)
     while bound < total:
         found = parse_matchday(fetch_matchday(season, bound), season, bound)
-        if not found or any(m["status"] == "scheduled" for m in found):
+        # A postponed match leaves a played matchday partly "scheduled"; only a
+        # matchday without a single result marks where the season has got to.
+        if not found or not any(m["status"] == "played" for m in found):
             break
         bound += 1
     return bound
