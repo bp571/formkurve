@@ -25,6 +25,8 @@ Expected goals are a mean, not a tip: the most likely exact score is right in
 4% of matches, and 2:1 alone would be the "prediction" in a third of them. The
 page therefore publishes only their *sum* - open game or grind - because the
 pair beside the percentages restages the same contradiction one model deeper.
+The one pair it does show is `tip()`: the score closest to the expected goals inside
+the outcome the percentages favour, so it cannot contradict them.
 """
 
 import csv
@@ -176,8 +178,26 @@ def next_matchday(scheduled):
     return (min(full), by_matchday[min(full)]) if full else (None, [])
 
 
+def tip(home_xg, away_xg, outcome, max_goals=8):
+    """The score *within* `outcome` closest to the expected goals.
+
+    Constrained to the outcome the percentages favour: a tip that contradicts
+    its own percentages reads as a bug. Closest to the expected goals rather than
+    the most likely score of the Poisson: that mode sits about one goal below the
+    mean, so 2.6 : 1.4 would be tipped 2:1 and every tip would undershoot the
+    "Tore erwartet" column beside it. Ties go to the likelier score.
+    """
+    def pmf(k, lam):
+        return math.exp(-lam) * lam ** k / math.factorial(k)
+
+    scores = [(h, a) for h in range(max_goals + 1) for a in range(max_goals + 1)
+              if outcome_of(h, a) == outcome]
+    return min(scores, key=lambda s: ((s[0] - home_xg) ** 2 + (s[1] - away_xg) ** 2,
+                                      -pmf(s[0], home_xg) * pmf(s[1], away_xg)))
+
+
 def forecast(played, fixtures):
-    """Probabilities and expected goals per fixture, in kick-off order."""
+    """Probabilities, expected goals and the score tip per fixture, in kick-off order."""
     if len(played) < MIN_MATCHES or not fixtures:
         return []
     params = _current_calibration(played)
@@ -187,9 +207,11 @@ def forecast(played, fixtures):
     for f in sorted(fixtures, key=lambda r: (r["date"], r["home_team"])):
         home_xg, away_xg = expected_goals(model, f["home_team"], f["away_team"])
         p_away, p_draw, p_home = probabilities(home_xg - away_xg, params)
+        p = (p_away, p_draw, p_home)
         out.append({"date": f["date"], "home": f["home_team"], "away": f["away_team"],
                     "p_home": p_home, "p_draw": p_draw, "p_away": p_away,
-                    "xg_home": home_xg, "xg_away": away_xg})
+                    "xg_home": home_xg, "xg_away": away_xg,
+                    "tip": tip(home_xg, away_xg, max(range(3), key=p.__getitem__))})
     return out
 
 

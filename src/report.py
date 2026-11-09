@@ -1511,6 +1511,7 @@ def forecast_section(season, played, logos, forms, scheduled=None):
             f'<td class="l dt">{short_date(t["date"])}</td>'
             f'<td class="l fx">{sides}<div class="bar">{bar}</div>{mark}</td>'
             f'{cells}'
+            f'<td class="tp">{t["tip"][0]}:{t["tip"][1]}</td>'
             f'<td class="xg s-hide">{num(t["xg_home"] + t["xg_away"])}</td></tr>'
         )
 
@@ -1528,14 +1529,14 @@ def forecast_section(season, played, logos, forms, scheduled=None):
 
     return f"""<section class="fcast">
     <h2>Prognose für Spieltag {matchday}{why("prognose")}</h2>
-    <p class="sub">Heim, Remis, Auswärts und die erwarteten Tore für den nächsten
-    Spieltag.</p>
+    <p class="sub">Heim, Remis, Auswärts, ein Ergebnistipp und die erwarteten Tore für den
+    nächsten Spieltag.</p>
     <div class="card">
       <table>
         <thead>
           <tr>
             <th class="l">Termin</th><th class="l">Begegnung</th>
-            <th>Heim</th><th>Remis</th><th>Ausw.</th>
+            <th>Heim</th><th>Remis</th><th>Ausw.</th><th>Tipp</th>
             <th class="s-hide">Tore erwartet</th>
           </tr>
         </thead>
@@ -1688,12 +1689,18 @@ def method_section(show_rest):
     Seiten (Heimvorteil eingerechnet) und aus deren Abstand die drei Prozentwerte. Die
     Umrechnung wird vor jedem Spieltag neu geeicht, an {SEASON_PREVIOUS} und den bisherigen
     Spielen dieser Saison, auch der Heimvorteil. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
-    Spiel oder Abtasten. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
+    Spiel oder Abtasten. Der <strong>Tipp</strong> ist das Ergebnis innerhalb des
+    wahrscheinlichsten Ausgangs, das den erwarteten Toren beider Seiten am nächsten liegt. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
     Form.</p>
     <p>Ein <strong>Remis ist nie am wahrscheinlichsten</strong>, weil beide Seiten dieselbe
     Torzahl treffen müssten. Die <strong>Prozente liegen eng beieinander</strong>, weil die
     Ergebnisse in dieser Liga stark streuen: Ein ganzes Tor Vorsprung in der Erwartung ist
     rund sechs Prozentpunkte wert.</p>
+    <p>Der <strong>Tipp</strong> passt immer zu den Prozenten. Ein Ausgang wie "Heimsieg" fasst
+    viele Ergebnisse zusammen (1:0, 2:1, 3:1 ...), jedes für sich unter 15&nbsp;%. Das
+    wahrscheinlichste Einzelergebnis wäre deshalb oft ein 1:1, obwohl der Heimsieg insgesamt
+    vorn liegt. Der Tipp nimmt darum innerhalb des wahrscheinlichsten Ausgangs das Ergebnis,
+    das den erwarteten Toren am nächsten liegt. Exakt getroffen wird er selten.</p>
     <p><strong>Bilanz</strong>: Das Modell tippt immer den wahrscheinlichsten Ausgang, ob mit
     51 oder 75&nbsp;%; daneben ein Fehlerwert, der auch die Höhe der Prozente bewertet
     (kleiner ist besser). Verglichen wird mit der sturen Liga-Quote, als Tipp: immer Heimsieg.
@@ -2244,6 +2251,7 @@ def render(season, rows, matchday_n=None):
   .fcast td.dt {{ color:var(--muted); font-size:13.5px; white-space:nowrap; }}
   .fcast td.p {{ width:64px; }}
   .fcast td.best {{ font-weight:700; }}
+  .fcast td.tp {{ font-weight:700; white-space:nowrap; }}
   .fcast td.xg {{ color:var(--muted); white-space:nowrap; }}
   .fcast td.l:first-child + td {{ font-family:var(--body); }}
   /* A pen stroke down the margin marks the fixture, no highlighter: that one

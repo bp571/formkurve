@@ -17,8 +17,8 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
   *Überraschung* und *Topspiel*, jeweils nach einer festen Regel vergeben.
 - **Team im Detail** — Ergebnisse, Restprogramm, Saisonverlauf, Torschützen, Belag und
   Angstgegner je Team.
-- **Prognose** — Heim/Remis/Auswärts-Wahrscheinlichkeiten und erwartete Tore für den nächsten
-  Spieltag, samt Bilanz gegen die Liga-Quote. Jüngere Spiele zählen mehr (Halbwertszeit sechs
+- **Prognose** — Heim/Remis/Auswärts-Wahrscheinlichkeiten, Ergebnistipp und erwartete Tore für den
+  nächsten Spieltag, samt Bilanz gegen die Liga-Quote. Jüngere Spiele zählen mehr (Halbwertszeit sechs
   Spieltage), die Umrechnung wird vor jedem Spieltag neu geeicht.
 - **Statistik** — Torschützen, Belag und Heimbonus, Rückstand und Führung.
 - **Erklärungen** — ein eigener Tab, der jede Spalte und jeden Marker erklärt.

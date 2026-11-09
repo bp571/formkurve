@@ -299,6 +299,7 @@
   .fcast td.dt { color:var(--muted); font-size:13.5px; white-space:nowrap; }
   .fcast td.p { width:64px; }
   .fcast td.best { font-weight:700; }
+  .fcast td.tp { font-weight:700; white-space:nowrap; }
   .fcast td.xg { color:var(--muted); white-space:nowrap; }
   .fcast td.l:first-child + td { font-family:var(--body); }
   /* A pen stroke down the margin marks the fixture, no highlighter: that one
@@ -2146,25 +2147,25 @@
   <div class="view" id="v-prognose" role="tabpanel" aria-labelledby="t-prognose" hidden>
 <div class="dash fdash"><div class="col"><section class="fcast">
     <h2>Prognose für Spieltag 5<a class="why" href="#m-prognose" aria-label="Erklärung">?</a></h2>
-    <p class="sub">Heim, Remis, Auswärts und die erwarteten Tore für den nächsten
-    Spieltag.</p>
+    <p class="sub">Heim, Remis, Auswärts, ein Ergebnistipp und die erwarteten Tore für den
+    nächsten Spieltag.</p>
     <div class="card">
       <table>
         <thead>
           <tr>
             <th class="l">Termin</th><th class="l">Begegnung</th>
-            <th>Heim</th><th>Remis</th><th>Ausw.</th>
+            <th>Heim</th><th>Remis</th><th>Ausw.</th><th>Tipp</th>
             <th class="s-hide">Tore erwartet</th>
           </tr>
         </thead>
         <tbody>
-          <tr class=""><td class="l dt">Mi 02.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/ssv-boppard.png" alt=""><span>SSV Boppard</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sc-weiler.png" alt=""><span>SC Weiler</span></div><div class="bar"><i class="w" style="width:54.9%"></i><i class="d" style="width:16.6%"></i><i class="l" style="width:28.5%"></i></div></td><td class="p best">55&nbsp;%</td><td class="p">17&nbsp;%</td><td class="p">28&nbsp;%</td><td class="xg s-hide">3,9</td></tr>
-          <tr class=""><td class="l dt">Sa 05.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/vfb-baybachhoehe.png" alt=""><span>VfB Baybachhöhe</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-dickenschied.png" alt=""><span>SG Dickenschied</span></div><div class="bar"><i class="w" style="width:73.6%"></i><i class="d" style="width:11.6%"></i><i class="l" style="width:14.8%"></i></div></td><td class="p best">74&nbsp;%</td><td class="p">12&nbsp;%</td><td class="p">15&nbsp;%</td><td class="xg s-hide">4,0</td></tr>
-          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-braunshorn.png" alt=""><span>SG Braunshorn</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-zell.png" alt=""><span>SG Zell</span></div><div class="bar"><i class="w" style="width:59.1%"></i><i class="d" style="width:15.8%"></i><i class="l" style="width:25.1%"></i></div></td><td class="p best">59&nbsp;%</td><td class="p">16&nbsp;%</td><td class="p">25&nbsp;%</td><td class="xg s-hide">2,5</td></tr>
-          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-rheinblick-oberwesel.png" alt=""><span>SG Rheinblick Oberwesel</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-bremm.png" alt=""><span>SG Bremm</span></div><div class="bar"><i class="w" style="width:60.0%"></i><i class="d" style="width:15.6%"></i><i class="l" style="width:24.4%"></i></div></td><td class="p best">60&nbsp;%</td><td class="p">16&nbsp;%</td><td class="p">24&nbsp;%</td><td class="xg s-hide">2,4</td></tr>
-          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-werlau.png" alt=""><span>SG Werlau</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sv-strimmig.png" alt=""><span>SV Strimmig</span></div><div class="bar"><i class="w" style="width:43.7%"></i><i class="d" style="width:17.9%"></i><i class="l" style="width:38.4%"></i></div></td><td class="p best">44&nbsp;%</td><td class="p">18&nbsp;%</td><td class="p">38&nbsp;%</td><td class="xg s-hide">3,8</td></tr>
-          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sv-blankenrath.png" alt=""><span>SV Blankenrath</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/tus-rheinboellen.png" alt=""><span>TuS Rheinböllen</span></div><div class="bar"><i class="w" style="width:54.6%"></i><i class="d" style="width:16.7%"></i><i class="l" style="width:28.7%"></i></div></td><td class="p best">55&nbsp;%</td><td class="p">17&nbsp;%</td><td class="p">29&nbsp;%</td><td class="xg s-hide">3,7</td></tr>
-          <tr class="hl"><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/tus-kirchberg-ii.png" alt=""><span>TuS Kirchberg II</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt=""><span>SG Vorderhunsrück Sabershausen</span></div><div class="bar"><i class="w" style="width:69.4%"></i><i class="d" style="width:13.0%"></i><i class="l" style="width:17.6%"></i></div><span class="badge ul">Topspiel</span></td><td class="p best">69&nbsp;%</td><td class="p">13&nbsp;%</td><td class="p">18&nbsp;%</td><td class="xg s-hide">4,0</td></tr>
+          <tr class=""><td class="l dt">Mi 02.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/ssv-boppard.png" alt=""><span>SSV Boppard</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sc-weiler.png" alt=""><span>SC Weiler</span></div><div class="bar"><i class="w" style="width:54.9%"></i><i class="d" style="width:16.6%"></i><i class="l" style="width:28.5%"></i></div></td><td class="p best">55&nbsp;%</td><td class="p">17&nbsp;%</td><td class="p">28&nbsp;%</td><td class="tp">2:1</td><td class="xg s-hide">3,9</td></tr>
+          <tr class=""><td class="l dt">Sa 05.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/vfb-baybachhoehe.png" alt=""><span>VfB Baybachhöhe</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-dickenschied.png" alt=""><span>SG Dickenschied</span></div><div class="bar"><i class="w" style="width:73.6%"></i><i class="d" style="width:11.6%"></i><i class="l" style="width:14.8%"></i></div></td><td class="p best">74&nbsp;%</td><td class="p">12&nbsp;%</td><td class="p">15&nbsp;%</td><td class="tp">3:1</td><td class="xg s-hide">4,0</td></tr>
+          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-braunshorn.png" alt=""><span>SG Braunshorn</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-zell.png" alt=""><span>SG Zell</span></div><div class="bar"><i class="w" style="width:59.1%"></i><i class="d" style="width:15.8%"></i><i class="l" style="width:25.1%"></i></div></td><td class="p best">59&nbsp;%</td><td class="p">16&nbsp;%</td><td class="p">25&nbsp;%</td><td class="tp">2:1</td><td class="xg s-hide">2,5</td></tr>
+          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-rheinblick-oberwesel.png" alt=""><span>SG Rheinblick Oberwesel</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-bremm.png" alt=""><span>SG Bremm</span></div><div class="bar"><i class="w" style="width:60.0%"></i><i class="d" style="width:15.6%"></i><i class="l" style="width:24.4%"></i></div></td><td class="p best">60&nbsp;%</td><td class="p">16&nbsp;%</td><td class="p">24&nbsp;%</td><td class="tp">2:1</td><td class="xg s-hide">2,4</td></tr>
+          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-werlau.png" alt=""><span>SG Werlau</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sv-strimmig.png" alt=""><span>SV Strimmig</span></div><div class="bar"><i class="w" style="width:43.7%"></i><i class="d" style="width:17.9%"></i><i class="l" style="width:38.4%"></i></div></td><td class="p best">44&nbsp;%</td><td class="p">18&nbsp;%</td><td class="p">38&nbsp;%</td><td class="tp">2:1</td><td class="xg s-hide">3,8</td></tr>
+          <tr class=""><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/sv-blankenrath.png" alt=""><span>SV Blankenrath</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/tus-rheinboellen.png" alt=""><span>TuS Rheinböllen</span></div><div class="bar"><i class="w" style="width:54.6%"></i><i class="d" style="width:16.7%"></i><i class="l" style="width:28.7%"></i></div></td><td class="p best">55&nbsp;%</td><td class="p">17&nbsp;%</td><td class="p">29&nbsp;%</td><td class="tp">2:1</td><td class="xg s-hide">3,7</td></tr>
+          <tr class="hl"><td class="l dt">So 06.09.</td><td class="l fx"><div class="fxt"><img class="lg sm" src="../../assets/logos/tus-kirchberg-ii.png" alt=""><span>TuS Kirchberg II</span></div><div class="fxt"><img class="lg sm" src="../../assets/logos/sg-vorderhunsrueck-sabershausen.png" alt=""><span>SG Vorderhunsrück Sabershausen</span></div><div class="bar"><i class="w" style="width:69.4%"></i><i class="d" style="width:13.0%"></i><i class="l" style="width:17.6%"></i></div><span class="badge ul">Topspiel</span></td><td class="p best">69&nbsp;%</td><td class="p">13&nbsp;%</td><td class="p">18&nbsp;%</td><td class="tp">3:1</td><td class="xg s-hide">4,0</td></tr>
         </tbody>
       </table>
     </div>
@@ -2315,12 +2316,18 @@
     Seiten (Heimvorteil eingerechnet) und aus deren Abstand die drei Prozentwerte. Die
     Umrechnung wird vor jedem Spieltag neu geeicht, an 2025/26 und den bisherigen
     Spielen dieser Saison, auch der Heimvorteil. <strong>Tore erwartet</strong> ist die Summe beider Seiten: offenes
-    Spiel oder Abtasten. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
+    Spiel oder Abtasten. Der <strong>Tipp</strong> ist das Ergebnis innerhalb des
+    wahrscheinlichsten Ausgangs, das den erwarteten Toren beider Seiten am nächsten liegt. <strong>Topspiel</strong> ist die Paarung mit der besten gemeinsamen
     Form.</p>
     <p>Ein <strong>Remis ist nie am wahrscheinlichsten</strong>, weil beide Seiten dieselbe
     Torzahl treffen müssten. Die <strong>Prozente liegen eng beieinander</strong>, weil die
     Ergebnisse in dieser Liga stark streuen: Ein ganzes Tor Vorsprung in der Erwartung ist
     rund sechs Prozentpunkte wert.</p>
+    <p>Der <strong>Tipp</strong> passt immer zu den Prozenten. Ein Ausgang wie "Heimsieg" fasst
+    viele Ergebnisse zusammen (1:0, 2:1, 3:1 ...), jedes für sich unter 15&nbsp;%. Das
+    wahrscheinlichste Einzelergebnis wäre deshalb oft ein 1:1, obwohl der Heimsieg insgesamt
+    vorn liegt. Der Tipp nimmt darum innerhalb des wahrscheinlichsten Ausgangs das Ergebnis,
+    das den erwarteten Toren am nächsten liegt. Exakt getroffen wird er selten.</p>
     <p><strong>Bilanz</strong>: Das Modell tippt immer den wahrscheinlichsten Ausgang, ob mit
     51 oder 75&nbsp;%; daneben ein Fehlerwert, der auch die Höhe der Prozente bewertet
     (kleiner ist besser). Verglichen wird mit der sturen Liga-Quote, als Tipp: immer Heimsieg.
