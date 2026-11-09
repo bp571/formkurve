@@ -25,8 +25,8 @@ Expected goals are a mean, not a tip: the most likely exact score is right in
 4% of matches, and 2:1 alone would be the "prediction" in a third of them. The
 page therefore publishes only their *sum* - open game or grind - because the
 pair beside the percentages restages the same contradiction one model deeper.
-The one pair it does show is `tip()`: the score closest to the expected goals inside
-the outcome the percentages favour, so it cannot contradict them.
+The one pair it does show is `tip()`: the score inside the outcome the percentages favour whose total
+is nearest the expected total (then nearest per side), so it matches both.
 """
 
 import csv
@@ -179,7 +179,8 @@ def next_matchday(scheduled):
 
 
 def tip(home_xg, away_xg, outcome, max_goals=8):
-    """The score *within* `outcome` closest to the expected goals.
+    """The score *within* `outcome` whose total is nearest the expected total, then
+    the one nearest the expected goals per side.
 
     Constrained to the outcome the percentages favour: a tip that contradicts
     its own percentages reads as a bug. Closest to the expected goals rather than
@@ -192,7 +193,11 @@ def tip(home_xg, away_xg, outcome, max_goals=8):
 
     scores = [(h, a) for h in range(max_goals + 1) for a in range(max_goals + 1)
               if outcome_of(h, a) == outcome]
-    return min(scores, key=lambda s: ((s[0] - home_xg) ** 2 + (s[1] - away_xg) ** 2,
+    # The total comes first: the tip's goals must add up to the "Tore erwartet"
+    # beside it. Squared distance alone picked 1:2 for 1.8 : 2.2 (4.0 expected).
+    total = home_xg + away_xg
+    return min(scores, key=lambda s: (abs(s[0] + s[1] - total),
+                                      (s[0] - home_xg) ** 2 + (s[1] - away_xg) ** 2,
                                       -pmf(s[0], home_xg) * pmf(s[1], away_xg)))
 
 
