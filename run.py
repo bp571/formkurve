@@ -17,6 +17,7 @@ from config import (  # noqa: E402
     STAFFEL_IDS,
 )
 from details import collect as collect_details  # noqa: E402
+from lineups import collect as collect_lineups  # noqa: E402
 from parse import collect_season, parse_matchday, save_matches_csv, validate  # noqa: E402
 from report import build_table, write_season  # noqa: E402
 from scrape import fetch_matchday  # noqa: E402
@@ -122,6 +123,7 @@ def main():
     # --cached means no network, and the details on disk simply stay as they are.
     if not args.cached:
         collect_details(args.season)
+        collect_lineups(args.season)
 
     table = rank(args.season)
     if not table:

@@ -16,7 +16,7 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
 - **Marker** — *Mannschaft der Stunde*, *Formsprung*, *Comeback-Team*, *Führung verspielt*,
   *Überraschung* und *Topspiel*, jeweils nach einer festen Regel vergeben.
 - **Team im Detail** — Ergebnisse, Restprogramm, Saisonverlauf, Torschützen, Belag und
-  Angstgegner je Team.
+  Angstgegner je Team, dazu der Hinweis, wenn drei oder mehr Stammspieler fehlten.
 - **Prognose** — Heim/Remis/Auswärts-Wahrscheinlichkeiten, Ergebnistipp und erwartete Tore für den
   nächsten Spieltag, samt Bilanz gegen die Liga-Quote. Jüngere Spiele zählen mehr (Halbwertszeit sechs
   Spieltage), die Umrechnung wird vor jedem Spieltag neu geeicht.

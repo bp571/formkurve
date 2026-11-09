@@ -391,7 +391,7 @@
   .sheet .none { margin:12px 0; color:var(--muted); }
   .mt { display:grid; column-gap:12px; row-gap:1px; align-items:center;
          grid-template-columns:minmax(0,1fr) auto minmax(150px,44%);
-         grid-template-areas:"h hg tl" "a ag tl" "meta meta meta" "prob prob prob";
+         grid-template-areas:"h hg tl" "a ag tl" "meta meta meta" "abs abs abs" "prob prob prob";
          padding:13px 0 14px; }
   .mt + .mt { border-top:1px solid var(--line); }
   .mt .fxt { min-width:0; }
@@ -406,6 +406,10 @@
   .mtl .badge { bottom:-6px; font-size:15px; transform:translateX(-100%) rotate(-2.5deg); }
   .mtl .badge.from { transform:rotate(-2.5deg); }
   .mmeta { grid-area:meta; margin:5px 0 0; color:var(--muted); font-size:13.5px; }
+  /* Handwriting in the margin, like the minutes a match turned in. */
+  .mabs { grid-area:abs; margin:2px 0 0; }
+  .abs { font:700 15px/1.3 var(--hand); color:var(--mark); margin-right:14px; white-space:nowrap; }
+  .tres .opp div { font-weight:400; }
   .mprob { grid-area:prob; display:flex; align-items:center; flex-wrap:wrap;
             gap:4px 12px; margin-top:3px; }
   .mprob .bar { margin:0; flex:0 1 170px; }
@@ -619,7 +623,7 @@
     /* The strip gets its own line under the two sides; beside them it would
        be a hundred pixels wide. */
     .mt { grid-template-columns:minmax(0,1fr) auto;
-           grid-template-areas:"h hg" "a ag" "tl tl" "meta meta" "prob prob"; }
+           grid-template-areas:"h hg" "a ag" "tl tl" "meta meta" "abs abs" "prob prob"; }
     .mtl { height:52px; padding-left:0; margin-top:4px; }
     .mtl svg { inset:0; width:100%; }
     .tres .vl { display:none; }
@@ -768,7 +772,8 @@
         <p class="hint">Ein Strich je Tor, oben der Gastgeber, unten der Gast, der Querstrich
         ist die Halbzeit. Das <span class="bang inline">!</span> markiert einen Sieg, dem die
         Prognose weniger als ein Viertel gab. <em>gedreht</em> und <em>Führung verspielt</em>
-        stehen unter den Minuten, in denen es passiert ist.</p>
+        stehen unter den Minuten, in denen es passiert ist. Fehlen einem Team drei oder mehr
+        <a href="#m-stammspieler">Stammspieler</a>, steht das darunter.</p>
         <p class="hint legend"><strong>Form</strong> zählt nur die letzten fünf Spieltage,
         <strong>Saison</strong> alle bisherigen, 50 ist jeweils Ligadurchschnitt. Der Wert hinter
         dem Tabellenplatz ist der Abstand zur Formtabelle: <span class="chip up">+2</span> heißt
@@ -2009,7 +2014,18 @@
     25&nbsp;% gab. Nur Siege, weil das Remis in jeder Paarung das
     Unwahrscheinlichste ist. <em>gedreht</em> unter den Minuten, in denen der spätere Sieger
     zurücklag, <em>Führung verspielt</em> bei einem Remis unter den Minuten der verspielten
-    Führung.</p>
+    Führung. Dazu, wenn einem Team drei oder mehr
+    <a href="#m-stammspieler">Stammspieler</a> fehlten.</p>
+    </div>
+    <div class="topic">
+    <h3 id="m-stammspieler">Stammspieler</h3>
+    <p>Ein <strong>Stammspieler</strong> stand in mindestens 60% der bisherigen
+    Saisonspiele seines Teams in der Startelf, gerechnet ab Spieltag 5 (dann
+    liegen mindestens 4 Spiele vor). Neuzugänge zählen, sobald sie so oft gespielt
+    haben, wer gegangen ist, fällt von selbst heraus. Gemeldet wird ab 3 fehlenden,
+    denn im Schnitt fehlen 2,3 pro Spiel. Mit höchstens einem Fehlenden holen Teams 1,6 Punkte
+    pro Spiel, mit drei oder mehr 1,2. Ob jemand verletzt ist oder geschont wird, ist nicht
+    zu sehen.</p>
     </div>
     <div class="topic">
     <h3 id="m-team">Team im Detail</h3>
@@ -2080,8 +2096,8 @@
     <div class="topic">
     <h3 id="m-grenzen">Was sich nicht messen lässt</h3>
     <p>fussball.de veröffentlicht für Amateurligen nur Ergebnisse, Torminuten, Karten, Anstoß,
-    Platz und Zuschauer. Wer ein Spiel dominiert hat, wer verletzt fehlt, wie der Platz oder das
-    Wetter war: dafür gibt es keine Daten.</p>
+    Platz, Zuschauer und Aufstellungen. Wer ein Spiel dominiert hat, warum jemand fehlt, wie der
+    Platz oder das Wetter war: dafür gibt es keine Daten.</p>
     </div>
     </div>
   </section>

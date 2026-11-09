@@ -26,6 +26,7 @@ from config import (
 )
 from analysis import MIN_BOGEY_MEETINGS, page_data
 from details import DETAILS_CSV, EVENTS_CSV, load_csv
+from lineups import FIRST_MATCHDAY, MIN_PRIOR, REGULAR_SHARE, REPORT_FROM, absent_regulars
 from backtest import outcome_of
 from predict import (
     HALF_LIFE, MIN_MATCHES, SIM_RUNS, forecast, load, next_matchday, simulate_season,
@@ -939,11 +940,20 @@ def timeline(goals, top="home", story=None, tall=False):
             f'{"".join(ticks)}{pen}</svg>')
 
 
-def matchday_sheet(rows, matchday, logos, details, goals):
+def missing_note(n, prefix=""):
+    """"3 Stammspieler fehlen", from REPORT_FROM on; empty below, where it is
+    the normal state of an amateur side and says nothing."""
+    if n is None or n < REPORT_FROM:
+        return ""
+    return f'<span class="abs">{prefix}{n} Stammspieler fehlen</span>'
+
+
+def matchday_sheet(rows, matchday, logos, details, goals, absent=None):
     """Every match of the latest matchday as one line of a report sheet: both
     sides and the score, the goal minutes as a strip, kickoff, ground, crowd
     and half-time underneath, and the pre-match percentages as the same bar
-    the forecast uses. Two notes, each by a fixed rule: a "!" behind a win the
+    the forecast uses. Three notes, each by a fixed rule: the regulars a side
+    played without (from REPORT_FROM of them, see lineups.absent_regulars), a "!" behind a win the
     forecast gave less than one in four (wins only - a draw is the least
     likely outcome of every pairing here, so by probability alone almost every
     matchday's surprise would be a 1:1), and under the strip the minutes in
@@ -995,6 +1005,11 @@ def matchday_sheet(rows, matchday, logos, details, goals):
             meta += [d["kickoff"], d["surface"], f'{d["attendance"]} Zuschauer',
                      f'Halbzeit {d["ht_home"]}:{d["ht_away"]}']
         meta_html = f'<p class="mmeta">{html.escape(", ".join(m for m in meta if m))}</p>'
+        gaps = " ".join(note for note in (
+            missing_note(absent.get(mid, {}).get("home") if absent else None, f'{html.escape(r["home_team"])}: '),
+            missing_note(absent.get(mid, {}).get("away") if absent else None, f'{html.escape(r["away_team"])}: ')) if note)
+        if gaps:
+            meta_html += f'<p class="mabs">{gaps}</p>'
 
         prob_html = ""
         if mid in probs:
@@ -1276,7 +1291,7 @@ def team_stats_by_venue(rows, team):
 
 
 def team_details_html(table, rows, logos, season, matchdays, match_probs, goals, bogey,
-                      shares, details, effects):
+                      shares, details, effects, absent=None):
     """One section with a team dropdown and one panel per team, all hidden except
     rank 0; the dropdown switches panels.
 
@@ -1375,10 +1390,14 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
                 res_letter = {"w": "S", "d": "U", "l": "N"}[res]
 
                 opp_side = "H" if is_home else "A"
+                mine, theirs = ("home", "away") if is_home else ("away", "home")
+                counts = (absent or {}).get(r["match_id"], {})
+                gaps = "".join(f'<div>{note}</div>' for note in (
+                    missing_note(counts.get(mine)), missing_note(counts.get(theirs), "Gegner: ")) if note)
                 results.append(
                     f'<tr><td class="md">{r["matchday"]}</td>'
                     f'<td class="dt">{short_date(r["date"])}</td>'
-                    f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span></td>'
+                    f'<td class="opp">{html.escape(opponent)} <span class="vs">{opp_side}</span>{gaps}</td>'
                     f'<td class="sc"><span class="res {res}">{res_letter}</span>{score}{bang}</td>'
                     f'<td class="fxd">{effect_html(effects[r["match_id"]][team])}</td>'
                     f'<td class="vl">{strip}</td>'
@@ -1401,7 +1420,8 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
     <span class="res l">N</span>Niederlage aus Sicht dieses Teams; H und A: zu Hause oder
     auswärts. <strong>Form</strong>: wie viele Formpunkte das Spiel gebracht oder gekostet hat.
     <strong>Verlauf</strong>: ein Strich je Tor, oben die eigenen, unten die des
-    Gegners, der Querstrich ist die Halbzeit. <strong>Siegchance vorher</strong> ist die
+    Gegners, der Querstrich ist die Halbzeit. Unter dem Gegner steht, wenn drei oder mehr
+    <a href="#m-stammspieler">Stammspieler</a> gefehlt haben. <strong>Siegchance vorher</strong> ist die
     Prognose vor dem Anpfiff; das <span class="bang inline">!</span> markiert einen Sieg mit
     weniger als einem Viertel.</p>
 """
@@ -1668,7 +1688,18 @@ def method_section(show_rest):
     {pct(SURPRISE_MAX_P)} gab. Nur Siege, weil das Remis in jeder Paarung das
     Unwahrscheinlichste ist. <em>gedreht</em> unter den Minuten, in denen der spätere Sieger
     zurücklag, <em>Führung verspielt</em> bei einem Remis unter den Minuten der verspielten
-    Führung.</p>
+    Führung. Dazu, wenn einem Team drei oder mehr
+    <a href="#m-stammspieler">Stammspieler</a> fehlten.</p>
+    </div>
+    <div class="topic">
+    <h3 id="m-stammspieler">Stammspieler</h3>
+    <p>Ein <strong>Stammspieler</strong> stand in mindestens {REGULAR_SHARE:.0%} der bisherigen
+    Saisonspiele seines Teams in der Startelf, gerechnet ab Spieltag {FIRST_MATCHDAY} (dann
+    liegen mindestens {MIN_PRIOR} Spiele vor). Neuzugänge zählen, sobald sie so oft gespielt
+    haben, wer gegangen ist, fällt von selbst heraus. Gemeldet wird ab {REPORT_FROM} fehlenden,
+    denn im Schnitt fehlen 2,3 pro Spiel. Mit höchstens einem Fehlenden holen Teams 1,6 Punkte
+    pro Spiel, mit drei oder mehr 1,2. Ob jemand verletzt ist oder geschont wird, ist nicht
+    zu sehen.</p>
     </div>
     <div class="topic">
     <h3 id="m-team">Team im Detail</h3>
@@ -1739,8 +1770,8 @@ def method_section(show_rest):
     <div class="topic">
     <h3 id="m-grenzen">Was sich nicht messen lässt</h3>
     <p>fussball.de veröffentlicht für Amateurligen nur Ergebnisse, Torminuten, Karten, Anstoß,
-    Platz und Zuschauer. Wer ein Spiel dominiert hat, wer verletzt fehlt, wie der Platz oder das
-    Wetter war: dafür gibt es keine Daten.</p>
+    Platz, Zuschauer und Aufstellungen. Wer ein Spiel dominiert hat, warum jemand fehlt, wie der
+    Platz oder das Wetter war: dafür gibt es keine Daten.</p>
     </div>
     </div>
   </section>
@@ -1820,6 +1851,7 @@ def render(season, rows, matchday_n=None):
     # Team detail panels: only render for current season
     # and generate HTML for each team's detail section
     details, goals = match_detail_data(played)
+    absent = absent_regulars(played) if season == SEASON_CURRENT else {}
     team_panels_html = stats_html = ""
     if season == SEASON_CURRENT:
         match_probs = match_probabilities(played, season)
@@ -1827,7 +1859,7 @@ def render(season, rows, matchday_n=None):
         # clone without data/details.csv rather than rendered empty.
         surface, marks, first, shares, bogey = page_data(played, season)
         team_panels_html = team_details_html(table, played, logos, season, matchdays,
-                                             match_probs, goals, bogey, shares, details, effects)
+                                             match_probs, goals, bogey, shares, details, effects, absent)
         stats_html = f"""  <section class="stats dash">
     <div class="col">
       <h2>Statistik</h2>
@@ -1933,11 +1965,12 @@ def render(season, rows, matchday_n=None):
     if season == SEASON_CURRENT:
         side_section = f"""<h2>Spieltag {matchday}{why("spieltag")}</h2>
         <p class="sub">Alle Spiele des letzten Spieltags mit ihren Torminuten.</p>
-        {matchday_sheet(played, matchday, logos, details, goals)}
+        {matchday_sheet(played, matchday, logos, details, goals, absent)}
         <p class="hint">Ein Strich je Tor, oben der Gastgeber, unten der Gast, der Querstrich
         ist die Halbzeit. Das <span class="bang inline">!</span> markiert einen Sieg, dem die
         Prognose weniger als ein Viertel gab. <em>gedreht</em> und <em>Führung verspielt</em>
-        stehen unter den Minuten, in denen es passiert ist.</p>"""
+        stehen unter den Minuten, in denen es passiert ist. Fehlen einem Team drei oder mehr
+        <a href="#m-stammspieler">Stammspieler</a>, steht das darunter.</p>"""
     else:
         side_section = f"""<h2>Formverlauf{why("form")}</h2>
         <p class="sub">Die Form an jedem Spieltag, jeweils aus den fünf davor. Die Linien
@@ -2343,7 +2376,7 @@ def render(season, rows, matchday_n=None):
   .sheet .none {{ margin:12px 0; color:var(--muted); }}
   .mt {{ display:grid; column-gap:12px; row-gap:1px; align-items:center;
          grid-template-columns:minmax(0,1fr) auto minmax(150px,44%);
-         grid-template-areas:"h hg tl" "a ag tl" "meta meta meta" "prob prob prob";
+         grid-template-areas:"h hg tl" "a ag tl" "meta meta meta" "abs abs abs" "prob prob prob";
          padding:13px 0 14px; }}
   .mt + .mt {{ border-top:1px solid var(--line); }}
   .mt .fxt {{ min-width:0; }}
@@ -2358,6 +2391,10 @@ def render(season, rows, matchday_n=None):
   .mtl .badge {{ bottom:-6px; font-size:15px; transform:translateX(-100%) rotate(-2.5deg); }}
   .mtl .badge.from {{ transform:rotate(-2.5deg); }}
   .mmeta {{ grid-area:meta; margin:5px 0 0; color:var(--muted); font-size:13.5px; }}
+  /* Handwriting in the margin, like the minutes a match turned in. */
+  .mabs {{ grid-area:abs; margin:2px 0 0; }}
+  .abs {{ font:700 15px/1.3 var(--hand); color:var(--mark); margin-right:14px; white-space:nowrap; }}
+  .tres .opp div {{ font-weight:400; }}
   .mprob {{ grid-area:prob; display:flex; align-items:center; flex-wrap:wrap;
             gap:4px 12px; margin-top:3px; }}
   .mprob .bar {{ margin:0; flex:0 1 170px; }}
@@ -2571,7 +2608,7 @@ def render(season, rows, matchday_n=None):
     /* The strip gets its own line under the two sides; beside them it would
        be a hundred pixels wide. */
     .mt {{ grid-template-columns:minmax(0,1fr) auto;
-           grid-template-areas:"h hg" "a ag" "tl tl" "meta meta" "prob prob"; }}
+           grid-template-areas:"h hg" "a ag" "tl tl" "meta meta" "abs abs" "prob prob"; }}
     .mtl {{ height:52px; padding-left:0; margin-top:4px; }}
     .mtl svg {{ inset:0; width:100%; }}
     .tres .vl {{ display:none; }}
