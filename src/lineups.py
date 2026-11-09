@@ -114,11 +114,14 @@ REPORT_FROM = 3
 
 
 def absent_regulars(rows):
-    """{match_id: {"home": n, "away": n}}: how many of a team's regulars were not in
-    the starting eleven. Only for matches from matchday FIRST_MATCHDAY with a line-up
+    """{match_id: {"home": [(share, name), ...], "away": [...]}}: the regulars of a team that
+    were not in the starting eleven, each with the share of the team's earlier matches he
+    started (highest first). Only for matches from matchday FIRST_MATCHDAY with a line-up
     on file; empty without lineups.csv. A function of the matches before each one."""
     starters = defaultdict(set)
+    names = {}
     for r in load_csv(LINEUPS_CSV):
+        names[r["player_id"]] = r["player"]
         if r["role"] == "start":
             starters[(r["match_id"], r["side"])].add(r["player_id"])
     out = {}
@@ -132,7 +135,8 @@ def absent_regulars(rows):
             if len(past) >= MIN_PRIOR and int(m["matchday"]) >= FIRST_MATCHDAY:
                 seen = Counter(p for eleven in past for p in eleven)
                 regulars = {p for p, c in seen.items() if c / len(past) >= REGULAR_SHARE}
-                out.setdefault(mid, {})[side] = len(regulars - starters[(mid, side)])
+                gone = regulars - starters[(mid, side)]
+                out.setdefault(mid, {})[side] = sorted(((seen[p] / len(past), names.get(p, "")) for p in gone), reverse=True)
             past.append(starters[(mid, side)])
     return out
 

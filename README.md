@@ -14,7 +14,9 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
 - **Spieltag** — jedes Spiel mit seinen Torminuten, Anstoß, Platz, Zuschauern und der Prognose
   davor.
 - **Marker** — *Mannschaft der Stunde*, *Formsprung*, *Comeback-Team*, *Führung verspielt*,
-  *Überraschung* und *Topspiel*, jeweils nach einer festen Regel vergeben.
+  *Überraschung* und *Topspiel*, jeweils nach einer festen Regel vergeben. Beim Überfahren mit
+  der Maus erklärt eine kleine Karte, warum der Marker dort steht (bei fehlenden Stammspielern
+  mit Initialen und Einsatzquote).
 - **Team im Detail** — Ergebnisse, Restprogramm, Saisonverlauf, Torschützen, Belag und
   Angstgegner je Team, dazu der Hinweis, wenn drei oder mehr Stammspieler fehlten.
 - **Prognose** — Heim/Remis/Auswärts-Wahrscheinlichkeiten, Ergebnistipp und erwartete Tore für den
@@ -34,12 +36,19 @@ der letzten fünf Spieltage. Live unter [bp571.github.io/formkurve](https://bp57
 ## Datenquelle
 
 Ergebnisse von [fussball.de](https://www.fussball.de). Die Seite veröffentlicht nur abgeleitete
-Werte, keine Rohdaten und keine Spielernamen.
+Werte, keine Rohdaten und keine vollen Spielernamen (nur Initialen bei fehlenden Stammspielern).
 
 ## Aktualisieren
 
 ```
 python run.py        # Ergebnisse holen, bewerten, alle Seiten schreiben
+```
+
+Oder im Container, ohne lokales Python:
+
+```
+docker compose run --rm formkurve run.py     # wie python run.py, Daten und Seiten liegen in ./data und ./docs
+docker compose run --rm test                 # pytest
 ```
 
 Danach committen und pushen — GitHub Pages baut in etwa einer Minute neu. Technische Details,

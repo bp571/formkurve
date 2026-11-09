@@ -940,12 +940,34 @@ def timeline(goals, top="home", story=None, tall=False):
             f'{"".join(ticks)}{pen}</svg>')
 
 
-def missing_note(n, prefix=""):
+def tip_attrs(title, text):
+    """The attributes that make a note open the hover card (one script for the
+    page reads them). Lines in `text` are separated by newlines."""
+    return f' data-tip-h="{html.escape(title)}" data-tip="{html.escape(text)}" tabindex="0"'
+
+
+def bang_html(p_win):
+    tip = tip_attrs("Überraschung", f"Die Prognose gab diesem Sieg vorher nur {round(p_win * 100)} %.")
+    return f'<span class="bang"{tip}>!</span>'
+
+
+def initials(name):
+    """"Jan Eric Muster" -> "J. E. M."; words the font decoder left as "?" are
+    dropped. The page shows initials only, never a full name."""
+    letters = [w[0] for w in name.split() if w[0] != "?"]
+    return " ".join(f"{c}." for c in letters) or "Unbekannt"
+
+
+def missing_note(shares, prefix=""):
     """"3 Stammspieler fehlen", from REPORT_FROM on; empty below, where it is
-    the normal state of an amateur side and says nothing."""
-    if n is None or n < REPORT_FROM:
+    the normal state of an amateur side and says nothing. `shares` is what
+    absent_regulars gives per side; the hover card lists them without names."""
+    if shares is None or len(shares) < REPORT_FROM:
         return ""
-    return f'<span class="abs">{prefix}{n} Stammspieler fehlen</span>'
+    lines = [f"{initials(name)}: in {round(s * 100)} % der bisherigen Spiele in der Startelf"
+             for s, name in shares]
+    tip = tip_attrs("Es fehlen", "\n".join(lines))
+    return f'<span class="abs"{tip}>{prefix}{len(shares)} Stammspieler fehlen</span>'
 
 
 def matchday_sheet(rows, matchday, logos, details, goals, absent=None):
@@ -981,7 +1003,7 @@ def matchday_sheet(rows, matchday, logos, details, goals, absent=None):
             if mid in probs and hg != ag and g == max(hg, ag):
                 p_win = probs[mid][2 if hg > ag else 0]
                 if p_win < SURPRISE_MAX_P:
-                    bang = '<span class="bang">!</span>'
+                    bang = bang_html(p_win)
             sides += (f'<div class="fxt {side}">{crest_img(logos, r[key])}'
                       f'<span>{html.escape(r[key])}</span></div>'
                       f'<b class="mg {side}">{g}{bang}</b>')
@@ -991,13 +1013,17 @@ def matchday_sheet(rows, matchday, logos, details, goals, absent=None):
             note = ""
             if story:
                 text, x1, x2 = story
+                m1, m2 = round(x1 / TL_W * 95), round(x2 / TL_W * 95)
+                what = ("Der Sieger lag zurück" if text == "gedreht"
+                        else "Die Seite, die zuletzt führte, hat nicht gewonnen")
+                tip = tip_attrs(text, f"{what}, von Minute {m1} bis {m2}.")
                 # Anchored at the minute the swing ended and written leftwards
                 # from there; early in the match there is no room to the left,
                 # so the note starts at the swing instead.
                 if x2 > TL_W * 0.4:
-                    note = f'<span class="badge plain swing" style="left:{x2 / TL_W:.1%}">{text}</span>'
+                    note = f'<span class="badge plain swing"{tip} style="left:{x2 / TL_W:.1%}">{text}</span>'
                 else:
-                    note = f'<span class="badge plain swing from" style="left:{x1 / TL_W:.1%}">{text}</span>'
+                    note = f'<span class="badge plain swing from"{tip} style="left:{x1 / TL_W:.1%}">{text}</span>'
             strip = f'<div class="mtl">{timeline(gs, "home", story, tall=True)}{note}</div>'
 
         meta = [short_date(r["date"])]
@@ -1106,12 +1132,15 @@ def comeback_section(marks, first, logos):
     if not first["n"]:
         return ""
     lines = []
-    for key, label, pts, n, noun in (
-        ("comeback", "Comeback-Team", "pts_after_trailing", "trailed", "Spielen mit Rückstand"),
-        ("dropped", "Führung verspielt", "pts_dropped_leading", "led", "Führungen liegen gelassen"),
+    for key, label, pts, n, noun, rule in (
+        ("comeback", "Comeback-Team", "pts_after_trailing", "trailed", "Spielen mit Rückstand",
+         "Die meisten Punkte aus Spielen mit Rückstand, ab 4 Punkten."),
+        ("dropped", "Führung verspielt", "pts_dropped_leading", "led", "Führungen liegen gelassen",
+         "Die meisten Punkte aus Spielen mit Führung liegen gelassen, ab 4 Punkten."),
     ):
+        badge = f'<span class="badge plain"{tip_attrs(label, rule)}>{label}</span>'
         if marks[key] is None:
-            lines.append(f'<div class="cb"><span class="badge plain">{label}</span>'
+            lines.append(f'<div class="cb">{badge}'
                          f'<p class="none">diesen Spieltag keines</p></div>')
             continue
         team, t = marks[key]
@@ -1121,7 +1150,7 @@ def comeback_section(marks, first, logos):
         if key == "comeback" and t["won_after_trailing"]:
             extra = f', {t["won_after_trailing"]} davon noch gewonnen'
         lines.append(
-            f'<div class="cb"><span class="badge plain">{label}</span>'
+            f'<div class="cb">{badge}'
             f'<div class="fxt">{crest_img(logos, team)}<span>{html.escape(team)}</span></div>'
             f'<p><b>{t[pts]} Punkte</b> aus {t[n]} {noun}{extra}.</p></div>'
         )
@@ -1187,7 +1216,9 @@ def bogey_line(bogey, team, logos):
     if not hit:
         return ""
     opp, p = hit
-    return (f'<span class="tbogey">Angstgegner <b>{crest_img(logos, opp)}{html.escape(opp)}</b> '
+    tip = tip_attrs("Angstgegner", "Der Gegner, gegen den dieses Team über alle Saisons am meisten "
+                                   "hinter der Erwartung zurückbleibt, ab 2 Duellen.")
+    return (f'<span class="tbogey"{tip}>Angstgegner <b>{crest_img(logos, opp)}{html.escape(opp)}</b> '
             f'<span class="trank">{p["w"]}-{p["d"]}-{p["l"]} aus {p["n"]} Duellen, '
             f'{num(p["deficit"])} Siege unter Erwartung</span></span>')
 
@@ -1378,7 +1409,7 @@ def team_details_html(table, rows, logos, season, matchdays, match_probs, goals,
                     p = match_probs[idx]
                     prob_txt = pct(p[2] if is_home else p[0])
                     if hg != ag and p[outcome] < SURPRISE_MAX_P:
-                        bang = '<span class="bang">!</span>'
+                        bang = bang_html(p[outcome])
                 # The strip seen from this team: its own goals above the line.
                 gs = goals.get(r["match_id"], [])
                 strip = timeline(gs, "home" if is_home else "away") if gs or hg + ag == 0 else ""
@@ -1525,7 +1556,8 @@ def forecast_section(season, played, logos, forms, scheduled=None):
                       for cls, key in (("w", "p_home"), ("d", "p_draw"), ("l", "p_away")))
         # Underlined rather than ringed: the ring is reserved for the team of
         # the hour, and a fixture someone means to watch gets a line under it.
-        mark = '<span class="badge ul">Topspiel</span>' if i == top else ""
+        mark = (f'<span class="badge ul"{tip_attrs("Topspiel", "Die Paarung mit der besten gemeinsamen Form beider Teams.")}'
+                '>Topspiel</span>' if i == top else "")
         body.append(
             f'<tr class="{"hl" if i == top else ""}">'
             f'<td class="l dt">{short_date(t["date"])}</td>'
@@ -1925,9 +1957,15 @@ def render(season, rows, matchday_n=None):
         crest = f'<img class="lg" src="{crest}" alt="">' if crest else ""
         if rank == hot_rank:
             # The highlighter across the row does the pointing for this one.
-            badge = '<span class="badge">Mannschaft der Stunde</span>'
+            tip = tip_attrs("Mannschaft der Stunde",
+                            f"Form auf Platz {rank + 1}, Tabelle auf Platz {t['position']}: "
+                            f"der größte Vorsprung der Form vor dem Tabellenplatz.")
+            badge = f'<span class="badge"{tip}>Mannschaft der Stunde</span>'
         elif rank == jump_rank:
-            badge = f'<span class="badge">Formsprung{ARROW}</span>'
+            tip = tip_attrs("Formsprung",
+                            f"Die Form stieg seit dem letzten Spieltag um {num(t['delta'])} Punkte, "
+                            f"der größte Zugewinn der Liga.")
+            badge = f'<span class="badge"{tip}>Formsprung{ARROW}</span>'
         else:
             badge = ""
 
@@ -2181,6 +2219,8 @@ def render(season, rows, matchday_n=None):
                padding-top:5px; font:500 16px var(--body); color:var(--muted); }}
   .dtip .dr b {{ font:700 24px/1 var(--display); font-variant-numeric:tabular-nums; }}
   .dtip .dr.win {{ color:var(--ink); font-weight:700; }}
+  .dtip .dn {{ padding-top:5px; font:500 15px/1.35 var(--body); color:var(--ink); }}
+  [data-tip] {{ cursor:help; }}
   .dtip .df {{ display:flex; align-items:center; gap:6px; margin-top:8px; padding-top:7px;
                border-top:1px solid var(--line); color:var(--muted); font:14px var(--body); }}
   .dtip .df .res {{ margin-right:0; }}
@@ -2265,7 +2305,7 @@ def render(season, rows, matchday_n=None):
   .badge.ul::before, .badge.ul::after {{ display:none; }}
   .bang {{ position:absolute; left:100%; top:-9px; margin-left:2px;
            font:700 27px/1 var(--hand); color:var(--mark);
-           transform:rotate(7deg); pointer-events:none; }}
+           transform:rotate(7deg); }}
   .bang.inline {{ position:static; display:inline-block; font-size:21px;
                   vertical-align:-3px; margin:0 1px; }}
   /* Drawn outside the ring and clear of the digits, so the note reaches the
@@ -2822,22 +2862,35 @@ def render(season, rows, matchday_n=None):
               (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(1).replace('.', ','));
     foot.append(fx);
     dtip.append(foot);
+    place(dot);
+  }}
+  function place(anchor) {{
     dtip.hidden = false;
-    const r = dot.getBoundingClientRect(), w = dtip.offsetWidth, h = dtip.offsetHeight;
+    const r = anchor.getBoundingClientRect(), w = dtip.offsetWidth, h = dtip.offsetHeight;
     let top = r.top - h - 12;
     if (top < 8) top = r.bottom + 12;
     const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
     dtip.style.top = top + window.scrollY + 'px';
     dtip.style.left = left + window.scrollX + 'px';
   }}
+  // The same card for the margin notes (Formsprung, Stammspieler fehlen, ...):
+  // a heading and one line per line of data-tip.
+  function showNote(note) {{
+    dtip.replaceChildren();
+    const head = el('div', 'dh');
+    head.append(el('span', '', note.dataset.tipH));
+    dtip.append(head);
+    note.dataset.tip.split('\\n').forEach(t => dtip.append(el('div', 'dn', t)));
+    place(note);
+  }}
   function hideTip() {{ dtip.hidden = true; }}
-  document.addEventListener('pointerover', e => {{
-    const dot = e.target.closest('.seg i');
-    if (dot) showTip(dot); else hideTip();
-  }});
+  function show(target) {{
+    const dot = target.closest('.seg i'), note = target.closest('[data-tip]');
+    if (dot) showTip(dot); else if (note) showNote(note); else hideTip();
+  }}
+  document.addEventListener('pointerover', e => show(e.target));
   document.addEventListener('focusin', e => {{
-    const dot = e.target.closest('.seg i');
-    if (dot) showTip(dot);
+    if (e.target.closest('.seg i, [data-tip]')) show(e.target);
   }});
   document.addEventListener('focusout', hideTip);
   window.addEventListener('scroll', hideTip, {{ passive: true }});
